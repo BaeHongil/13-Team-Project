@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">ODEGO</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_bluetooth">Bluetooth</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+
+    <string name="page_title_0">즐겨찾기</string>
+    <string name="page_title_1">노선검색</string>
+    <string name="page_title_2">정류소검색</string>
+    <string name="page_title_3">기타</string>
+
+    <string name="route_search_view_hint">버스번호를 입력하세요</string>
+    <string name="busstop_search_view_hint">정류소명을 입력하세요</string>
+</resources>
