@@ -53,6 +53,7 @@ public class BusStopListAdapter extends BaseAdapter {
         if( convertView != null ) {
             mListItemView = (ListItemView) convertView;
             mListItemView.setItemNameText(mBusStopItem.getBsNm());
+            mListItemView.setItemDetailText(mBusStopItem.getNo());
         } else
             mListItemView = new ListItemView(mContext, mBusStopItem);
 

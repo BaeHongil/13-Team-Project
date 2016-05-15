@@ -37,6 +37,7 @@ public class ListItemView extends LinearLayout {
         init(context);
 
         setItemNameText(item.getRoNo());
+        setItemDetailText(item.getDirection());
         setItemIcon(BUS_ICON);
     }
 
@@ -45,6 +46,7 @@ public class ListItemView extends LinearLayout {
         init(context);
 
         setItemNameText(item.getBsNm());
+        setItemDetailText(item.getNo());
         setItemIcon(BUSSTOP_ICON);
     }
 

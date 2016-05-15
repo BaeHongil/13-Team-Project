@@ -6,10 +6,17 @@ package kr.ac.knu.odego.item;
 public class RouteItem {
     private String roNo;
     private String url;
+    private String direction;
 
     public RouteItem(String roNo, String url) {
-        setRoNo(roNo);
-        setUrl(url);
+        this.roNo = roNo;
+        this.url = url;
+    }
+
+    public RouteItem(String roNo, String url, String direction) {
+        this.roNo = roNo;
+        this.url = url;
+        this.direction = direction;
     }
 
     public String getRoNo() {
@@ -26,5 +33,13 @@ public class RouteItem {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getDirection() {
+        return direction;
+    }
+
+    public void setDirection(String direction) {
+        this.direction = direction;
     }
 }

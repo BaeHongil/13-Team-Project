@@ -27,18 +27,20 @@ public class Parser {
             String url = domain + "realTime.do?act=posInfoMain&roNo=" + URLEncoder.encode(no, "euc-kr");
             doc = Jsoup.connect(url).get();
             Elements titles = doc.select("ul.bl.mr15 .nx a");
-            //    LinkedHashMap<String, String> linkList = new LinkedHashMap<String, String>();
             mRouteItemList.clear();
             if( !titles.isEmpty() ) {
-                for(Element e: titles)
-                    mRouteItemList.add( new RouteItem(e.text(), e.absUrl("href")));
+                for(Element e: titles) {
+                    String routeNo = e.text();
+                    int offset = routeNo.indexOf("(");
+                    if( offset != -1 )
+                        mRouteItemList.add(new RouteItem( routeNo.substring(0, offset), e.absUrl("href"), routeNo.substring(offset) ));
+                    else
+                        mRouteItemList.add(new RouteItem( routeNo, e.absUrl("href") ));
+                }
 
             }
-            else {
-                if( doc.select("ul.bl.mr15 li.gd").isEmpty() )
-                    mRouteItemList.add(new RouteItem(no, url));
-            }
-
+            else if( doc.select("ul.bl.mr15 li.gd").isEmpty() )
+                mRouteItemList.add(new RouteItem(no, url));
 
             return mRouteItemList;
         } catch (IOException e1) {
@@ -77,23 +79,29 @@ public class Parser {
 
     // 버스정류장 검색
     public static ArrayList<BusStopItem> getBusStopListByWord(ArrayList<BusStopItem> mbusStopItemsList, String word) {
-        Document doc;
+        Document busStopListDoc, busStopNoDoc;
         try {
-            String url = domain + "realTime.do?act=arrInfoMain&bsNm=" + URLEncoder.encode(word, "euc-kr");
-            doc = Jsoup.connect(url).get();
-            Elements titles = doc.select("a.pl39");
-            mbusStopItemsList.clear();
-            if( !titles.isEmpty() ) {
-                for(Element e: titles) {
-                    String bsNm = e.text();
-                    mbusStopItemsList.add(new BusStopItem(bsNm.substring(bsNm.indexOf(". ") + 2), e.absUrl("href"))); // substring은 정류장이름 앞에 숫자 제거
-                }
+            String busStopListurl = domain + "realTime.do?act=arrInfoMain&bsNm=" + URLEncoder.encode(word, "euc-kr");
+            String busStopNoUrl = "http://businfo.daegu.go.kr/ba/arrbus/arrbus.do?act=findByBusStopNo&bsNm=" + URLEncoder.encode(word, "euc-kr");
 
+            busStopListDoc = Jsoup.connect(busStopListurl).get();
+            busStopNoDoc = Jsoup.connect(busStopNoUrl).get();
+            Elements listElems = busStopListDoc.select("a.pl39");
+            Elements noElems = busStopNoDoc.select("td.center");
+
+            mbusStopItemsList.clear();
+            if( !listElems.isEmpty() ) {
+                for(int i = 0; i < listElems.size(); i++) {
+                    Element listElem = listElems.get(i);
+                    Element noElem = noElems.get(i);
+
+                    String bsNm = listElem.text();
+                    mbusStopItemsList.add( new BusStopItem(bsNm.substring(bsNm.indexOf(". ") + 2), listElem.absUrl("href"), noElem.text()) ); // substring은 정류장이름 앞에 숫자 제거
+
+                }
             }
-            else {
-                if( doc.select("li.nd").isEmpty() )
-                    mbusStopItemsList.add( new BusStopItem(word, url) );
-            }
+            else if( !noElems.isEmpty() )
+                mbusStopItemsList.add( new BusStopItem(word, busStopListurl, noElems.get(0).text()) );
 
             return mbusStopItemsList;
         } catch (IOException e1) {

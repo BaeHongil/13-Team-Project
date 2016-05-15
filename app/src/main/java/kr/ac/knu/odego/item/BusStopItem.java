@@ -6,10 +6,12 @@ package kr.ac.knu.odego.item;
 public class BusStopItem {
     private String bsNm;
     private String url;
+    private String no;
 
-    public BusStopItem(String bsNm, String url) {
+    public BusStopItem(String bsNm, String url, String no) {
         this.bsNm = bsNm;
         this.url = url;
+        this.no = no;
     }
 
     public String getBsNm() {
@@ -26,5 +28,13 @@ public class BusStopItem {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getNo() {
+        return no;
+    }
+
+    public void setNo(String no) {
+        this.no = no;
     }
 }

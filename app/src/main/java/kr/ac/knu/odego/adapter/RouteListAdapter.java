@@ -53,6 +53,7 @@ public class RouteListAdapter extends BaseAdapter {
         if( convertView != null ) {
             mListItemView = (ListItemView) convertView;
             mListItemView.setItemNameText(mRouteItem.getRoNo());
+            mListItemView.setItemDetailText(mRouteItem.getDirection());
         } else
             mListItemView = new ListItemView(mContext, mRouteItem);
 
