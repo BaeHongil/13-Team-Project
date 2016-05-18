@@ -8,37 +8,37 @@ import android.widget.BaseAdapter;
 import java.util.ArrayList;
 
 import kr.ac.knu.odego.common.ListItemView;
-import kr.ac.knu.odego.item.RouteItem;
+import kr.ac.knu.odego.item.Route;
 
 /**
  * Created by BHI on 2016-05-14.
  */
 public class RouteListAdapter extends BaseAdapter {
     private Context mContext;
-    private ArrayList<RouteItem> mRouteItemList;
+    private ArrayList<Route> mRouteList;
 
     public RouteListAdapter(Context mContext) {
         this.mContext = mContext;
 
-        setmRouteItemList( new ArrayList<RouteItem>() );
+        setmRouteList( new ArrayList<Route>() );
     }
 
-    public void setmRouteItemList(ArrayList<RouteItem> mRouteItemList) {
-        this.mRouteItemList = mRouteItemList;
+    public void setmRouteList(ArrayList<Route> mRouteList) {
+        this.mRouteList = mRouteList;
     }
 
-    public ArrayList<RouteItem> getmRouteItemList() {
-        return mRouteItemList;
+    public ArrayList<Route> getmRouteList() {
+        return mRouteList;
     }
 
     @Override
     public int getCount() {
-        return mRouteItemList.size();
+        return mRouteList.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return mRouteItemList.get(position);
+        return mRouteList.get(position);
     }
 
     @Override
@@ -49,13 +49,13 @@ public class RouteListAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ListItemView mListItemView;
-        RouteItem mRouteItem = mRouteItemList.get(position);
+        Route mRoute = mRouteList.get(position);
         if( convertView != null ) {
             mListItemView = (ListItemView) convertView;
-            mListItemView.setItemNameText(mRouteItem.getRoNo());
-            mListItemView.setItemDetailText(mRouteItem.getDirection());
+            mListItemView.setItemNameText(mRoute.getRoNo());
+            mListItemView.setItemDetailText(mRoute.getDirection());
         } else
-            mListItemView = new ListItemView(mContext, mRouteItem);
+            mListItemView = new ListItemView(mContext, mRoute);
 
         return mListItemView;
     }

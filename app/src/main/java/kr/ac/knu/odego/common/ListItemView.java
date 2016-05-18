@@ -7,9 +7,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import kr.ac.knu.odego.R;
-import kr.ac.knu.odego.item.BusStopItem;
-import kr.ac.knu.odego.item.FavoriteItem;
-import kr.ac.knu.odego.item.RouteItem;
+import kr.ac.knu.odego.item.BusStop;
+import kr.ac.knu.odego.item.Favorite;
+import kr.ac.knu.odego.item.Route;
 
 /**
  * Created by BHI on 2016-05-15.
@@ -20,19 +20,19 @@ public class ListItemView extends LinearLayout {
     final int BUSSTOP_ICON = R.drawable.bus_stop_01;
     final int BUS_ICON = R.drawable.bus_01;
 
-    public ListItemView(Context context, FavoriteItem item) {
+    public ListItemView(Context context, Favorite item) {
         super(context);
         init(context);
 
         setItemNameText(item.getName());
         setItemDetailText(item.getUrl());
-        if(item.getType() == FavoriteItem.BUS_STOP)
+        if(item.getType() == Favorite.BUS_STOP)
             setItemIcon(BUSSTOP_ICON);
         else
             setItemIcon(BUS_ICON);
     }
 
-    public ListItemView(Context context, RouteItem item) {
+    public ListItemView(Context context, Route item) {
         super(context);
         init(context);
 
@@ -41,11 +41,11 @@ public class ListItemView extends LinearLayout {
         setItemIcon(BUS_ICON);
     }
 
-    public ListItemView(Context context, BusStopItem item) {
+    public ListItemView(Context context, BusStop item) {
         super(context);
         init(context);
 
-        setItemNameText(item.getBsNm());
+        setItemNameText(item.getName());
         setItemDetailText(item.getNo());
         setItemIcon(BUSSTOP_ICON);
     }

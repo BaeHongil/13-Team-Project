@@ -6,7 +6,7 @@
     android:paddingLeft="0dp"
     android:paddingRight="0dp"
     android:paddingTop="8dp"
-    tools:context=".main.MainActivity$PlaceholderFragment"
+    tools:context=".main.PlaceholderFragment"
     android:orientation="vertical">
 
     <SearchView

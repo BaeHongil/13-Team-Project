@@ -8,37 +8,37 @@ import android.widget.BaseAdapter;
 import java.util.ArrayList;
 
 import kr.ac.knu.odego.common.ListItemView;
-import kr.ac.knu.odego.item.FavoriteItem;
+import kr.ac.knu.odego.item.Favorite;
 
 /**
  * Created by BHI on 2016-05-14.
  */
 public class FavoriteListAdapter extends BaseAdapter {
     private Context mContext;
-    private ArrayList<FavoriteItem> mFavoriteItemList;
+    private ArrayList<Favorite> mFavoriteList;
 
     public FavoriteListAdapter(Context mContext) {
         this.mContext = mContext;
 
-        setmFavoriteItemList( new ArrayList<FavoriteItem>() );
+        setmFavoriteList( new ArrayList<Favorite>() );
     }
 
-    public void setmFavoriteItemList(ArrayList<FavoriteItem> mFavoriteItemList) {
-        this.mFavoriteItemList = mFavoriteItemList;
+    public void setmFavoriteList(ArrayList<Favorite> mFavoriteList) {
+        this.mFavoriteList = mFavoriteList;
     }
 
-    public ArrayList<FavoriteItem> getmFavoriteItemList() {
-        return mFavoriteItemList;
+    public ArrayList<Favorite> getmFavoriteList() {
+        return mFavoriteList;
     }
 
     @Override
     public int getCount() {
-        return mFavoriteItemList.size();
+        return mFavoriteList.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return mFavoriteItemList.get(position);
+        return mFavoriteList.get(position);
     }
 
     @Override
@@ -49,13 +49,13 @@ public class FavoriteListAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ListItemView mListItemView;
-        FavoriteItem mFavoriteItem = mFavoriteItemList.get(position);
+        Favorite mFavorite = mFavoriteList.get(position);
         if( convertView != null ) {
             mListItemView = (ListItemView) convertView;
-            mListItemView.setItemNameText(mFavoriteItem.getName());
-            mListItemView.setItemDetailText(mFavoriteItem.getUrl());
+            mListItemView.setItemNameText(mFavorite.getName());
+            mListItemView.setItemDetailText(mFavorite.getUrl());
         } else
-            mListItemView = new ListItemView(mContext, mFavoriteItem);
+            mListItemView = new ListItemView(mContext, mFavorite);
 
         return mListItemView;
     }

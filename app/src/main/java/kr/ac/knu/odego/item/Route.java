@@ -3,17 +3,17 @@ package kr.ac.knu.odego.item;
 /**
  * Created by BHI on 2016-05-14.
  */
-public class RouteItem {
+public class Route {
     private String roNo;
     private String url;
     private String direction;
 
-    public RouteItem(String roNo, String url) {
+    public Route(String roNo, String url) {
         this.roNo = roNo;
         this.url = url;
     }
 
-    public RouteItem(String roNo, String url, String direction) {
+    public Route(String roNo, String url, String direction) {
         this.roNo = roNo;
         this.url = url;
         this.direction = direction;

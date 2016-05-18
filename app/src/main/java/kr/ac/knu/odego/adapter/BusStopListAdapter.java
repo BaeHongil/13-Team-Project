@@ -5,40 +5,37 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
-import java.util.ArrayList;
-
+import io.realm.RealmResults;
 import kr.ac.knu.odego.common.ListItemView;
-import kr.ac.knu.odego.item.BusStopItem;
+import kr.ac.knu.odego.item.BusStop;
 
 /**
  * Created by BHI on 2016-05-14.
  */
 public class BusStopListAdapter extends BaseAdapter {
     private Context mContext;
-    private ArrayList<BusStopItem> mBusStopItemList;
+    private RealmResults<BusStop> mBusStopList;
 
     public BusStopListAdapter(Context mContext) {
         this.mContext = mContext;
-
-        setmBusStopItemList( new ArrayList<BusStopItem>() );
     }
 
-    public void setmBusStopItemList(ArrayList<BusStopItem> mBusStopItemList) {
-        this.mBusStopItemList = mBusStopItemList;
-    }
-
-    public ArrayList<BusStopItem> getmBusStopItemList() {
-        return mBusStopItemList;
+    public void setmBusStopList(RealmResults<BusStop> mBusStopList) {
+        this.mBusStopList = mBusStopList;
     }
 
     @Override
     public int getCount() {
-        return mBusStopItemList.size();
+        if(mBusStopList == null)
+            return 0;
+        return mBusStopList.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return mBusStopItemList.get(position);
+        if(mBusStopList == null)
+            return null;
+        return mBusStopList.get(position);
     }
 
     @Override
@@ -49,13 +46,13 @@ public class BusStopListAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ListItemView mListItemView;
-        BusStopItem mBusStopItem = mBusStopItemList.get(position);
+        BusStop mBusStop = mBusStopList.get(position);
         if( convertView != null ) {
             mListItemView = (ListItemView) convertView;
-            mListItemView.setItemNameText(mBusStopItem.getBsNm());
-            mListItemView.setItemDetailText(mBusStopItem.getNo());
+            mListItemView.setItemNameText(mBusStop.getName());
+            mListItemView.setItemDetailText(mBusStop.getNo());
         } else
-            mListItemView = new ListItemView(mContext, mBusStopItem);
+            mListItemView = new ListItemView(mContext, mBusStop);
 
         return mListItemView;
     }

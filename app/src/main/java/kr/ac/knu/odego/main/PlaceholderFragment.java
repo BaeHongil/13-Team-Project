@@ -2,7 +2,6 @@ package kr.ac.knu.odego.main;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,12 +12,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import io.realm.Realm;
+import io.realm.RealmResults;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.BusStopListAdapter;
 import kr.ac.knu.odego.adapter.FavoriteListAdapter;
 import kr.ac.knu.odego.adapter.RouteListAdapter;
 import kr.ac.knu.odego.common.Parser;
-import kr.ac.knu.odego.item.FavoriteItem;
+import kr.ac.knu.odego.item.BusStop;
+import kr.ac.knu.odego.item.Favorite;
 
 /**
  * 탭페이지에 들어갈 Fragment 생성.
@@ -30,6 +32,7 @@ public class PlaceholderFragment extends Fragment {
      */
     private static final String ARG_SECTION_NUMBER = "section_number";
     private ExecutorService executorService;
+    private Realm mRealm;
 
     public PlaceholderFragment() {
         executorService = Executors.newSingleThreadExecutor();
@@ -48,6 +51,25 @@ public class PlaceholderFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        switch ( getArguments().getInt(ARG_SECTION_NUMBER) ) {
+            case 2:
+                mRealm = Realm.getDefaultInstance();
+                break;
+            default:
+                    break;
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if(mRealm != null)
+            mRealm.close();
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View rootView;
@@ -61,9 +83,9 @@ public class PlaceholderFragment extends Fragment {
                 SearchView mSearchView = (SearchView) rootView.findViewById(R.id.search_view);
                 mSearchView.setVisibility(View.GONE);
 
-                mFavoriteListAdapter.getmFavoriteItemList().add( new FavoriteItem(FavoriteItem.BUS_STOP, "937", "00253") );
-                mFavoriteListAdapter.getmFavoriteItemList().add( new FavoriteItem(FavoriteItem.ROUTE, "경북대학교 정문앞", "01053") );
-                mFavoriteListAdapter.getmFavoriteItemList().add( new FavoriteItem(FavoriteItem.BUS_STOP, "101", "12053") );
+                mFavoriteListAdapter.getmFavoriteList().add( new Favorite(Favorite.BUS_STOP, "937", "00253") );
+                mFavoriteListAdapter.getmFavoriteList().add( new Favorite(Favorite.ROUTE, "경북대학교 정문앞", "01053") );
+                mFavoriteListAdapter.getmFavoriteList().add( new Favorite(Favorite.BUS_STOP, "101", "12053") );
 
                 break;
             case 1:
@@ -88,7 +110,7 @@ public class PlaceholderFragment extends Fragment {
                             mFutrue.cancel(true);
 
                         if( newText.isEmpty() ) {
-                            mRouteListAdapter.getmRouteItemList().clear();
+                            mRouteListAdapter.getmRouteList().clear();
                             mRouteListAdapter.notifyDataSetChanged();
 
                             return false;
@@ -97,7 +119,7 @@ public class PlaceholderFragment extends Fragment {
                         mFutrue = executorService.submit(new Runnable() {
                             @Override
                             public void run() {
-                                Parser.getRouteListByNo(mRouteListAdapter.getmRouteItemList(), newText);
+                                Parser.getInstance().getRouteListByNo(mRouteListAdapter.getmRouteList(), newText);
                                 if( !Thread.interrupted() )
                                     routeListView.post(new Runnable() {
                                         @Override
@@ -123,7 +145,6 @@ public class PlaceholderFragment extends Fragment {
                 SearchView mBusStopSearchView = (SearchView) rootView.findViewById(R.id.search_view);
                 mBusStopSearchView.setQueryHint(getString(R.string.busstop_search_view_hint));
                 mBusStopSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                    Future mFutrue;
 
                     @Override
                     public boolean onQueryTextSubmit(String query) {
@@ -131,30 +152,17 @@ public class PlaceholderFragment extends Fragment {
                     }
 
                     @Override
-                    public boolean onQueryTextChange(final String newText) {
-                        if( mFutrue != null && !mFutrue.isDone())
-                            mFutrue.cancel(true);
-
-                        if( newText.isEmpty() ) {
-                            mBusstopListAdapter.getmBusStopItemList().clear();
+                    public boolean onQueryTextChange(String newText) {
+                        if( !newText.isEmpty() ) {
+                            RealmResults<BusStop> results = mRealm.where(BusStop.class)
+                                    .contains("name", newText)
+                                    .or()
+                                    .contains("no", newText)
+                                    .findAll(); // 정류소 검색 쿼리
+                            mBusstopListAdapter.setmBusStopList(results);
                             mBusstopListAdapter.notifyDataSetChanged();
-
-                            return false;
                         }
 
-                        mFutrue = executorService.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                Parser.getBusStopListByWord(mBusstopListAdapter.getmBusStopItemList(), newText);
-                                if( !Thread.interrupted() )
-                                    busStopListView.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            mBusstopListAdapter.notifyDataSetChanged();
-                                        }
-                                    });
-                            }
-                        });
                         return false;
                     }
                 });
@@ -162,7 +170,6 @@ public class PlaceholderFragment extends Fragment {
                 break;
             default:
                 rootView = inflater.inflate(R.layout.blank_fragment, container, false);
-                Log.d("blank", container.toString());
                 break;
         }
 
