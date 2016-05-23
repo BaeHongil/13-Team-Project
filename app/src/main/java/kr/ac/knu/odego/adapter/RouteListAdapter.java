@@ -5,8 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
-import java.util.ArrayList;
-
+import io.realm.RealmResults;
 import kr.ac.knu.odego.common.ListItemView;
 import kr.ac.knu.odego.item.Route;
 
@@ -15,29 +14,31 @@ import kr.ac.knu.odego.item.Route;
  */
 public class RouteListAdapter extends BaseAdapter {
     private Context mContext;
-    private ArrayList<Route> mRouteList;
+    private RealmResults<Route> mRouteList;
 
     public RouteListAdapter(Context mContext) {
         this.mContext = mContext;
-
-        setmRouteList( new ArrayList<Route>() );
     }
 
-    public void setmRouteList(ArrayList<Route> mRouteList) {
+    public void setmRouteList(RealmResults<Route> mRouteList) {
         this.mRouteList = mRouteList;
     }
 
-    public ArrayList<Route> getmRouteList() {
+    public RealmResults<Route> getmRouteList() {
         return mRouteList;
     }
 
     @Override
     public int getCount() {
+        if( mRouteList == null )
+            return 0;
         return mRouteList.size();
     }
 
     @Override
     public Object getItem(int position) {
+        if( mRouteList == null )
+            return null;
         return mRouteList.get(position);
     }
 
@@ -52,7 +53,7 @@ public class RouteListAdapter extends BaseAdapter {
         Route mRoute = mRouteList.get(position);
         if( convertView != null ) {
             mListItemView = (ListItemView) convertView;
-            mListItemView.setItemNameText(mRoute.getRoNo());
+            mListItemView.setItemNameText(mRoute.getNo());
             mListItemView.setItemDetailText(mRoute.getDirection());
         } else
             mListItemView = new ListItemView(mContext, mRoute);

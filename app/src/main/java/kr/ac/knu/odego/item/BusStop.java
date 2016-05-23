@@ -2,6 +2,7 @@ package kr.ac.knu.odego.item;
 
 import io.realm.RealmObject;
 import io.realm.annotations.Index;
+import io.realm.annotations.PrimaryKey;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class BusStop extends RealmObject {
+    @PrimaryKey
     private String id; // 정류소고유ID
     @Index
     private String name; // 정류소이름

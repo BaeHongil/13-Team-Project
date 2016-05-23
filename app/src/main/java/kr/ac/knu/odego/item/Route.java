@@ -1,45 +1,40 @@
 package kr.ac.knu.odego.item;
 
+import io.realm.RealmObject;
+import io.realm.annotations.Index;
+import io.realm.annotations.PrimaryKey;
+import kr.ac.knu.odego.common.BusType;
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Created by BHI on 2016-05-14.
  */
-public class Route {
-    private String roNo;
-    private String url;
-    private String direction;
+@Getter
+@Setter
+public class Route extends RealmObject {
+    @PrimaryKey
+    private String id; // 노선고유ID
+    @Index
+    private String no; // 버스번호
+    @Index
+    private String direction; // 방면
+    private String type; // 노선유형
+    private String startBusStopName;
+    private String endBusStopName;
+    private int startHour;
+    private int startMin;
+    private int endHour;
+    private int endMin;
+    private int interval;
+    private int intervalSat;
+    private int intervalSun;
 
-    public Route(String roNo, String url) {
-        this.roNo = roNo;
-        this.url = url;
+    public void setEnumBusType(BusType busType) {
+        setType( busType.name() );
     }
 
-    public Route(String roNo, String url, String direction) {
-        this.roNo = roNo;
-        this.url = url;
-        this.direction = direction;
-    }
-
-    public String getRoNo() {
-        return roNo;
-    }
-
-    public void setRoNo(String roNo) {
-        this.roNo = roNo;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getDirection() {
-        return direction;
-    }
-
-    public void setDirection(String direction) {
-        this.direction = direction;
+    public BusType getEnumBusType() {
+        return BusType.valueOf(type);
     }
 }

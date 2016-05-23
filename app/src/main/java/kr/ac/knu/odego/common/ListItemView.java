@@ -17,8 +17,8 @@ import kr.ac.knu.odego.item.Route;
 public class ListItemView extends LinearLayout {
     private TextView mItemName, mItemDetail;
     private ImageView mItemIcon;
-    final int BUSSTOP_ICON = R.drawable.bus_stop_01;
-    final int BUS_ICON = R.drawable.bus_01;
+    private final int BUSSTOP_ICON = R.drawable.bus_stop_01;
+    private final int BUS_ICON = R.drawable.bus_01;
 
     public ListItemView(Context context, Favorite item) {
         super(context);
@@ -36,7 +36,7 @@ public class ListItemView extends LinearLayout {
         super(context);
         init(context);
 
-        setItemNameText(item.getRoNo());
+        setItemNameText(item.getNo());
         setItemDetailText(item.getDirection());
         setItemIcon(BUS_ICON);
     }

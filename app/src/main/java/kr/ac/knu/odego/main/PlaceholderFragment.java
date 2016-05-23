@@ -18,9 +18,9 @@ import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.BusStopListAdapter;
 import kr.ac.knu.odego.adapter.FavoriteListAdapter;
 import kr.ac.knu.odego.adapter.RouteListAdapter;
-import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Favorite;
+import kr.ac.knu.odego.item.Route;
 
 /**
  * 탭페이지에 들어갈 Fragment 생성.
@@ -54,6 +54,7 @@ public class PlaceholderFragment extends Fragment {
     public void onStart() {
         super.onStart();
         switch ( getArguments().getInt(ARG_SECTION_NUMBER) ) {
+            case 1:
             case 2:
                 mRealm = Realm.getDefaultInstance();
                 break;
@@ -106,29 +107,16 @@ public class PlaceholderFragment extends Fragment {
 
                     @Override
                     public boolean onQueryTextChange(final String newText) {
-                        if( mFutrue != null && !mFutrue.isDone())
-                            mFutrue.cancel(true);
-
-                        if( newText.isEmpty() ) {
-                            mRouteListAdapter.getmRouteList().clear();
-                            mRouteListAdapter.notifyDataSetChanged();
-
-                            return false;
+                        RealmResults<Route> results = null;
+                        if( !newText.isEmpty() ) {
+                            results = mRealm.where(Route.class)
+                                    .contains("no", newText)
+                                    .or()
+                                    .contains("direction", newText)
+                                    .findAll(); // 정류소 검색 쿼리
                         }
-
-                        mFutrue = executorService.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                Parser.getInstance().getRouteListByNo(mRouteListAdapter.getmRouteList(), newText);
-                                if( !Thread.interrupted() )
-                                    routeListView.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            mRouteListAdapter.notifyDataSetChanged();
-                                        }
-                                    });
-                            }
-                        });
+                        mRouteListAdapter.setmRouteList(results);
+                        mRouteListAdapter.notifyDataSetChanged();
 
                         return false;
                     }
@@ -153,15 +141,16 @@ public class PlaceholderFragment extends Fragment {
 
                     @Override
                     public boolean onQueryTextChange(String newText) {
+                        RealmResults<BusStop> results = null;
                         if( !newText.isEmpty() ) {
-                            RealmResults<BusStop> results = mRealm.where(BusStop.class)
+                            results = mRealm.where(BusStop.class)
                                     .contains("name", newText)
                                     .or()
                                     .contains("no", newText)
                                     .findAll(); // 정류소 검색 쿼리
-                            mBusstopListAdapter.setmBusStopList(results);
-                            mBusstopListAdapter.notifyDataSetChanged();
                         }
+                        mBusstopListAdapter.setmBusStopList(results);
+                        mBusstopListAdapter.notifyDataSetChanged();
 
                         return false;
                     }

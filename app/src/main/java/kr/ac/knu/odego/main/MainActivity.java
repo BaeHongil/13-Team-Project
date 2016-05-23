@@ -18,6 +18,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,6 +29,7 @@ import io.realm.RealmConfiguration;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.item.BusStop;
+import kr.ac.knu.odego.item.Route;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -38,7 +40,7 @@ public class MainActivity extends AppCompatActivity
     private final boolean IS_BT = false;
 
     private Realm mRealm;
-    private RealmConfiguration busStopRealmConfig;
+    private RealmConfiguration busDBRealmConfig;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,12 +83,12 @@ public class MainActivity extends AppCompatActivity
             mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
         // Realm 설정
-        busStopRealmConfig = new RealmConfiguration.Builder(this)
-                .name("busstoplist.realm")
+        busDBRealmConfig = new RealmConfiguration.Builder(this)
+                .name("busdb.realm")
                 .build();
 
-        Realm.setDefaultConfiguration(busStopRealmConfig);
-        mRealm = Realm.getInstance(busStopRealmConfig);
+        Realm.setDefaultConfiguration(busDBRealmConfig);
+        mRealm = Realm.getInstance(busDBRealmConfig);
         // Parser로 DB 생성
         new AsyncTask<Context, Context, Boolean>() {
             @Override
@@ -95,15 +97,45 @@ public class MainActivity extends AppCompatActivity
                 Boolean isProgress = false;
                 try {
                     mRealm = Realm.getDefaultInstance();
-                    if( mRealm.where(BusStop.class).count() == 0 ) {
-                        isProgress = true;
-                        publishProgress(params[0]);
-                        Parser.getInstance().createBusStopDB(mRealm, false);
-                    }
+                    Log.d("Route.Count()", mRealm.where(Route.class).count() + "");
+                    boolean isBusStopDB = true;
+                    boolean isRouteDB = true;
+                    if (mRealm.where(BusStop.class).count() == 0)
+                        isBusStopDB = false;
+                    if (mRealm.where(Route.class).count() == 0)
+                        isRouteDB = false;
+                    if (isBusStopDB && isRouteDB) // DB 둘 다 있을 때는 바로 끝내기
+                        return isProgress;
+
+                    isProgress = true;
+                    publishProgress(params[0]);
+                    final Parser mParser = Parser.getInstance();
+                    if (!isBusStopDB && !isRouteDB) { // DB 둘 다 없을 때는 Thread 하나 더 생성해서 DB생성
+                        Thread busStopThread = new Thread() {
+                            @Override
+                            public void run() {
+                                Realm mRealm = null;
+                                try {
+                                    mRealm = Realm.getDefaultInstance();
+                                    mParser.createBusStopDB(mRealm, false);
+                                } finally {
+                                    if (mRealm != null)
+                                        mRealm.close();
+                                }
+                            }
+                        };
+                        busStopThread.start();
+                        mParser.createRouteDB(mRealm, false);
+                        busStopThread.join();
+                    } else if ( !isBusStopDB )
+                        mParser.createBusStopDB(mRealm, false);
+                    else
+                        mParser.createRouteDB(mRealm, false);
+                } catch (InterruptedException e) { // busStopThread.join()에 대한 Exception
+                    e.printStackTrace();
                 } finally {
-                    if (mRealm != null) {
+                    if (mRealm != null)
                         mRealm.close();
-                    }
                 }
 
                 return isProgress;
