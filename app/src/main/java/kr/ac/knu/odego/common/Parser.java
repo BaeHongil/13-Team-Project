@@ -7,12 +7,11 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
 import io.realm.Realm;
 import kr.ac.knu.odego.item.ArrInfo;
+import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Route;
 import kr.ac.knu.odego.item.RouteArrInfo;
@@ -21,7 +20,7 @@ public class Parser {
     private static Parser instance;
     private String daeguDomain = "http://m.businfo.go.kr/bp/m/";
     private String openapiDomain = "http://openapi.tago.go.kr/openapi/service/";
-    private HashMap<String, Integer> mBusStopNoMap;
+    private String serviceKey = "%2FINPAsm7NTY0H7pQwDLNdW5dFd%2FhZxqvngMPEUKPW2de5TVRU2fhgI6x6CsUpkhjJYmH5tG4vYCahsntFWxJ%2Bg%3D%3D";
     private String daeguCityCode;
     private ArrayList<RouteArrInfo> routeArrInfoList;
 
@@ -43,10 +42,10 @@ public class Parser {
     public String getDaeguCityCode() {
         if( daeguCityCode == null) {
             StringBuilder urlBuilder = new StringBuilder(openapiDomain);
-            urlBuilder.append("BusSttnInfoInqireService/getCtyCodeList");
-            urlBuilder.append("?ServiceKey=%2FINPAsm7NTY0H7pQwDLNdW5dFd%2FhZxqvngMPEUKPW2de5TVRU2fhgI6x6CsUpkhjJYmH5tG4vYCahsntFWxJ%2Bg%3D%3D"); /*Service Key*/
-            urlBuilder.append("&numOfRows=999"); /*검색건수*/
-            urlBuilder.append("&pageNo=1"); /*페이지 번호*/
+            urlBuilder.append("BusSttnInfoInqireService/getCtyCodeList")
+                    .append("?ServiceKey=").append(serviceKey) /*Service Key*/
+                    .append("&numOfRows=999") /*검색건수*/
+                    .append("&pageNo=1"); /*페이지 번호*/
 
             try {
                 Document doc = Jsoup.connect(urlBuilder.toString()).get();
@@ -66,55 +65,57 @@ public class Parser {
     /**
      * BusStop(버스정류장) Realm DB 구축
      *
-     * @param mRealm      해당 메소드 실행하는 쓰레드의 Realm 인스턴스
+     * @param mRealm      현재 쓰레드에서 생성한 realm 인스턴스
      * @param isDeleteAll Realm 내의 BusStop 데이터 삭제 여부
      */
     public void createBusStopDB(Realm mRealm, boolean isDeleteAll) {
         // 버스정류소 리스트URL
         StringBuilder urlBuilder = new StringBuilder(openapiDomain);
-        urlBuilder.append("BusSttnInfoInqireService/getSttnNoList");
-        urlBuilder.append("?ServiceKey=%2FINPAsm7NTY0H7pQwDLNdW5dFd%2FhZxqvngMPEUKPW2de5TVRU2fhgI6x6CsUpkhjJYmH5tG4vYCahsntFWxJ%2Bg%3D%3D"); // 공공데이터 인증키
-        urlBuilder.append("&numOfRows=9999"); // 검색건수
-        urlBuilder.append("&pageNo=1"); // 페이지 번호
-        urlBuilder.append("&cityCode="); // 도시코드
-        urlBuilder.append(getDaeguCityCode()); // 대구도시코드
+        urlBuilder.append("BusSttnInfoInqireService/getSttnNoList")
+                .append("?ServiceKey=").append(serviceKey) // 공공데이터 인증키
+                .append("&numOfRows=9999") // 검색건수
+                .append("&pageNo=1") // 페이지 번호
+                .append("&cityCode=").append(getDaeguCityCode()); // 대구도시코드
         //    urlBuilder.append("&nodeNm="); // 찾을 정류소명
 
         try {
+            /* 버스정류소 리스트 획득 시작 */
             Document doc = Jsoup.connect(urlBuilder.toString()).timeout(10000).get();
-            Elements elems = doc.select("item");
-            if (!elems.isEmpty()) {
-                mRealm.beginTransaction();
-                if( isDeleteAll ) // 모든 BusStop 객체 삭제
-                    mRealm.where(BusStop.class).findAll().deleteAllFromRealm();
+            Elements busStopElems = doc.select("item");
+            if (busStopElems.isEmpty())
+                return;
 
-                for (Element elem : elems) {
-                    BusStop bs = mRealm.createObject(BusStop.class);
-                    bs.setGpslati(Double.parseDouble(elem.getElementsByTag("gpslati").text()));
-                    bs.setGpslong(Double.parseDouble(elem.getElementsByTag("gpslong").text()));
-                    bs.setId(elem.getElementsByTag("nodeid").text().substring(3));
-                    bs.setName(elem.getElementsByTag("nodenm").text());
-                }
-                mRealm.commitTransaction();
+            mRealm.beginTransaction();
+            if( isDeleteAll ) // 모든 BusStop 객체 삭제
+                mRealm.where(BusStop.class).findAll().deleteAllFromRealm();
+
+            for (Element busStopElem : busStopElems) {
+                BusStop bs = mRealm.createObject(BusStop.class);
+                bs.setGpslati(Double.parseDouble(busStopElem.getElementsByTag("gpslati").text()));
+                bs.setGpslong(Double.parseDouble(busStopElem.getElementsByTag("gpslong").text()));
+                bs.setId(busStopElem.getElementsByTag("nodeid").text().substring(3));
+                bs.setName(busStopElem.getElementsByTag("nodenm").text());
             }
-
+            /* 버스정류소 리스트 획득 끝 */
+            /* 버스정류소번호 리스트 획득 시작 */
             String busStopNoListUrl = "http://businfo.daegu.go.kr/ba/arrbus/arrbus.do?act=findByBusStopNo&bsNm="; // 정류소번호리스트 URL
             doc = Jsoup.connect(busStopNoListUrl).timeout(10000).get();
-            Elements titles = doc.select("tbody tr");
-            if (!titles.isEmpty()) {
-                mRealm.beginTransaction();
-                for (Element elem : titles) {
-                    String name = elem.child(0).text();
-                    String no = elem.child(1).text();
-                    if (!no.equals("0")) {
-                        BusStop bs = mRealm.where(BusStop.class).equalTo("name", name).findFirst();
-                        if (bs != null)
-                            bs.setNo(no);
-                    }
-                }
-                mRealm.commitTransaction();
+            Elements busStopNoElems = doc.select("tbody tr");
+            if ( busStopNoElems.isEmpty() )
+                return;
 
+            for (Element busStopNoElem : busStopNoElems) {
+                String name = busStopNoElem.child(0).text();
+                String no = busStopNoElem.child(1).text();
+                if (!no.equals("0")) {
+                    BusStop bs = mRealm.where(BusStop.class).equalTo("name", name).findFirst();
+                    if (bs != null)
+                        bs.setNo(no);
+                }
             }
+            mRealm.commitTransaction();
+
+            /* 버스정류소번호 리스트 획득 끝 */
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -123,17 +124,16 @@ public class Parser {
     /**
      * Route(노선) Realm DB 구축
      *
-     * @param mRealm      해당 메소드 실행하는 쓰레드의 Realm 인스턴스
+     * @param mRealm      현재 쓰레드에서 생성한 realm 인스턴스
      * @param isDeleteAll Realm 내의 Route 데이터 삭제 여부
      */
     public void createRouteDB(Realm mRealm, boolean isDeleteAll) {
         StringBuilder urlBuilder = new StringBuilder(openapiDomain);
-        urlBuilder.append("BusRouteInfoInqireService/getRouteNoList");
-        urlBuilder.append("?ServiceKey=%2FINPAsm7NTY0H7pQwDLNdW5dFd%2FhZxqvngMPEUKPW2de5TVRU2fhgI6x6CsUpkhjJYmH5tG4vYCahsntFWxJ%2Bg%3D%3D"); // 공공데이터 인증키
-        urlBuilder.append("&numOfRows=9999"); // 검색건수
-        urlBuilder.append("&pageNo=1"); // 페이지 번호
-        urlBuilder.append("&cityCode="); // 도시코드
-        urlBuilder.append(getDaeguCityCode()); // 대구도시코드
+        urlBuilder.append("BusRouteInfoInqireService/getRouteNoList")
+                .append("?ServiceKey=").append(serviceKey) // 공공데이터 인증키
+                .append("&numOfRows=9999") // 검색건수
+                .append("&pageNo=1") // 페이지 번호
+                .append("&cityCode=").append(getDaeguCityCode()); // 대구도시코드
         try {
             // 노선목록 파싱
             Document doc = Jsoup.connect(urlBuilder.toString()).timeout(10000).get();
@@ -163,60 +163,6 @@ public class Parser {
                             break;
                         }
                     }
-
-                    /*// 노선의 세부정보 파싱
-                    urlBuilder.setLength(0);
-                    urlBuilder.append(openapiDomain); // 찾을 노선명
-                    urlBuilder.append("BusRouteInfoInqireService/getRouteInfoIem");
-                    urlBuilder.append("?ServiceKey=%2FINPAsm7NTY0H7pQwDLNdW5dFd%2FhZxqvngMPEUKPW2de5TVRU2fhgI6x6CsUpkhjJYmH5tG4vYCahsntFWxJ%2Bg%3D%3D"); // 공공데이터 인증키
-                    urlBuilder.append("&numOfRows=9999"); // 검색건수
-                    urlBuilder.append("&pageNo=1"); // 페이지 번호
-                    urlBuilder.append("&cityCode="); // 도시코드
-                    urlBuilder.append(getDaeguCityCode()); // 대구도시코드
-                    urlBuilder.append("&routeId=DGB"); // 도시코드
-                    urlBuilder.append(route.getId()); // 노선ID
-                    doc = Jsoup.connect(urlBuilder.toString()).get();
-                    Elements routeInfoElems = doc.select("item");
-                    if( !routeInfoElems.isEmpty() ) {
-                        Element routeInfoElem = routeInfoElems.get(0);
-
-                        // 방면 정보가 존재하는 경우 direction 변수 저장
-                        String routeNo = routeInfoElem.getElementsByTag("routeno").text();
-                        int offset = routeNo.indexOf("[");
-                        if( offset != -1 ) {
-                            route.setNo( routeNo.substring(0, offset) );
-                            route.setDirection( routeNo.substring(offset+1, routeNo.length()-1) ); // 대괄호를 빼기 위해 +1, -1을 함
-                        } else
-                            route.setNo( routeNo );
-
-                        String routeTp = routeInfoElem.getElementsByTag("routetp").text();
-                        for( BusType busType: BusType.values() ) {
-                            if(busType.getName(true).equals( routeTp )) {
-                                route.setType(busType.name());
-                                break;
-                            }
-                        }
-                        route.setStartBusStopName( routeInfoElem.getElementsByTag("startnodenm").text() );
-                        route.setEndBusStopName( routeInfoElem.getElementsByTag("endnodenm").text() );
-
-                        String startTime = routeInfoElem.getElementsByTag("startvehicletime").text();
-                        String endTime = routeInfoElem.getElementsByTag("endvehicletime").text();
-                        route.setStartHour( Integer.parseInt(startTime.substring(0, 2)) );
-                        route.setStartMin( Integer.parseInt(startTime.substring(2)) );;
-                        route.setEndHour( Integer.parseInt(endTime.substring(0, 2)) );
-                        route.setEndMin( Integer.parseInt(endTime.substring(2)) );
-
-                        // 배차간격은 휴일만 있는 것도 있고 평일만 있는 것이 존재하는 것을 확인
-                        Elements intervalTimeElem = routeInfoElem.getElementsByTag("intervaltime");
-                        Elements intervalSatTimeElem = routeInfoElem.getElementsByTag("intervalsattime");
-                        Elements intervalSunTimeElem = routeInfoElem.getElementsByTag("intervalsuntime");
-                        if( !intervalTimeElem.isEmpty() )
-                            route.setInterval( Integer.parseInt(intervalTimeElem.text()) );
-                        if( !intervalSatTimeElem.isEmpty() )
-                            route.setIntervalSat( Integer.parseInt(intervalSatTimeElem.text()) );
-                        if( !intervalSunTimeElem.isEmpty() )
-                            route.setIntervalSun( Integer.parseInt(intervalSunTimeElem.text()) );
-                    }*/
                 }
                 mRealm.commitTransaction();
             }
@@ -226,55 +172,46 @@ public class Parser {
     }
 
     /**
-     * 버스정류장의 노선별 도착정보를 얻습니다. routeArrInfos 파라미터에 null을 넣을 시에는 반드시 반환값을 사용하세요.
+     * 버스정류장의 노선별 도착정보를 얻습니다.
+     * 노선별 도착정보 최초생성시 사용하는 메소드입니다.
      *
-     * @param mRealm        현재 쓰레드에서 만든 realm 객체
-     * @param routeArrInfos 만약, Adapter에 routeArrInfos가 없으면 null
-     * @param busStopId     the bus stop id
+     * @param mRealm    현재 쓰레드에서 생성한 realm 인스턴스
+     * @param busStopId the bus stop id
      * @return 버스정류장의 노선별 도착정보 배열
      */
-    public RouteArrInfo[] getBusStopArrInfos(Realm mRealm, RouteArrInfo[] routeArrInfos, String busStopId) {
+    public RouteArrInfo[] getBusStopArrInfos(Realm mRealm, String busStopId) {
         StringBuilder urlBuilder = new StringBuilder(daeguDomain);
-        urlBuilder.append("realTime.do?act=arrInfoRouteList&bsNm=&bsId=");
-        urlBuilder.append(busStopId);
+        urlBuilder.append("realTime.do?act=arrInfoRouteList&bsNm=&bsId=")
+                .append(busStopId);
 
+        RouteArrInfo[] routeArrInfos = null;
         try {
-            if( routeArrInfos == null ) {
-                if( routeArrInfoList == null )
-                    routeArrInfoList = new ArrayList<>();
-                else
-                    routeArrInfoList.clear();
+            if( routeArrInfoList == null )
+                routeArrInfoList = new ArrayList<>();
+            else
+                routeArrInfoList.clear();
 
-                Document doc = Jsoup.connect(urlBuilder.toString()).get();
-                Elements routeElems = doc.select("li.nx a");
-                if (!routeElems.isEmpty()) {
-                    int routeElemsSize = routeElems.size();
+            Document doc = Jsoup.connect(urlBuilder.toString()).get();
+            Elements routeElems = doc.select("li.nx a");
+            if (!routeElems.isEmpty()) {
+                int routeElemsSize = routeElems.size();
 
-                    for(int routeArrInfoIndex = 0; routeArrInfoIndex < routeElemsSize; routeArrInfoIndex++) {
-                        Element routeElem = routeElems.get(routeArrInfoIndex);
+                for(Element routeElem : routeElems) {
+                    String href = routeElem.attr("href");
+                    int startOffset = href.indexOf("roId="); // routeID 추출
+                    int endOffset = href.indexOf("&roNo=");
+                    if ( startOffset + 5 != endOffset && startOffset != -1 && endOffset != -1 ) { // startOffset == endOffset이면 전체통합노선의 경우라 제외(ex: 523(전체))
+                        String routeId = href.substring(startOffset + 5, endOffset);
+                        int moveDir = Integer.parseInt( href.substring(href.indexOf("moveDir=") + 8) );
 
-                        String href = routeElem.attr("href");
-                        int startOffset = href.indexOf("roId="); // routeID 추출
-                        int endOffset = href.indexOf("&roNo=");
-                        if ( startOffset + 5 != endOffset && startOffset != -1 && endOffset != -1 ) { // startOffset == endOffset이면 전체통합노선의 경우라 제외(ex: 523(전체))
-                            String routeId = href.substring(startOffset + 5, endOffset);
-                            int moveDir = Integer.parseInt( href.substring(href.indexOf("moveDir=") + 8) );
-
-                            Route mRoute = mRealm.where(Route.class).equalTo("id", routeId).findFirst();
-                            ArrInfo[] arrInfos = getArrInfos(busStopId, routeId, moveDir);
-                            routeArrInfoList.add(new RouteArrInfo(mRoute, moveDir, arrInfos));
-                        }
+                        Route mRoute = mRealm.where(Route.class).equalTo("id", routeId).findFirst();
+                        ArrInfo[] arrInfos = getArrInfos(busStopId, routeId, moveDir);
+                        routeArrInfoList.add(new RouteArrInfo(mRoute, moveDir, arrInfos));
                     }
                 }
-
-                routeArrInfos = routeArrInfoList.toArray(new RouteArrInfo[routeArrInfoList.size()]);
-            } else {
-                for(int routeArrInfoIndex = 0; routeArrInfoIndex < routeArrInfos.length; routeArrInfoIndex++) {
-                    String routeId = routeArrInfos[routeArrInfoIndex].getMRoute().getId();
-                    int moveDir = routeArrInfos[routeArrInfoIndex].getMoveDir();
-                    routeArrInfos[routeArrInfoIndex].setArrInfoArray( getArrInfos(busStopId, routeId, moveDir) );
-                }
             }
+
+            routeArrInfos = routeArrInfoList.toArray(new RouteArrInfo[routeArrInfoList.size()]);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -282,15 +219,34 @@ public class Parser {
         return routeArrInfos;
     }
 
-    // getBusStopArrInfos() 메소드에서만 사용하는 메소드
+    /**
+     * 버스정류장의 노선별 도착정보를 업데이트합니다.
+     * 최초생성시에는 getBusStopArrInfos(Realm mRealm, String busStopId)을 사용하고, 해당 메소드는 routeArrInfos가 있을 때만 사용하세요.
+     *
+     * @param mRealm        현재 쓰레드에서 생성한 realm 인스턴스
+     * @param busStopId     the bus stop id
+     * @param routeArrInfos null값이 아닌 인스턴스
+     * @return 버스정류장의 노선별 도착정보 배열
+     */
+    public RouteArrInfo[] updateBusStopArrInfos(Realm mRealm, String busStopId, RouteArrInfo[] routeArrInfos) {
+        for(int routeArrInfoIndex = 0; routeArrInfoIndex < routeArrInfos.length; routeArrInfoIndex++) {
+            String routeId = routeArrInfos[routeArrInfoIndex].getMRoute().getId();
+            int moveDir = routeArrInfos[routeArrInfoIndex].getMoveDir();
+            routeArrInfos[routeArrInfoIndex].setArrInfoArray( getArrInfos(busStopId, routeId, moveDir) );
+        }
+
+        return routeArrInfos;
+    }
+
+    // getBusStopArrInfos(), updateBusStopArrInfos() 메소드들에서만 사용하는 메소드
+    // busStopId    버스정류장ID
+    // routeId      노선ID
+    // moveDir      노선방향, 0이면 역방향, 1이면 정방향
     private ArrInfo[] getArrInfos(String busStopId, String routeId, int moveDir) {
         StringBuilder urlBuilder = new StringBuilder(daeguDomain);
-        urlBuilder.append("realTime.do?act=arrInfoRoute&bsNm=&roNo=&bsId=");
-        urlBuilder.append(busStopId);
-        urlBuilder.append("&roId=");
-        urlBuilder.append(routeId);
-        urlBuilder.append("&moveDir=");
-        urlBuilder.append(moveDir);
+        urlBuilder.append("realTime.do?act=arrInfoRoute&bsNm=&roNo=&bsId=").append(busStopId)
+                .append("&roId=").append(routeId)
+                .append("&moveDir=").append(moveDir);
 
         try {
             Document doc = Jsoup.connect(urlBuilder.toString()).get();
@@ -310,8 +266,7 @@ public class Parser {
                     if( secondChild.getElementsByTag("th").text().equals("종료정류소") ) { // 버스막차일 경우에만 생기는 항목
                         endBusStopName = secondChild.getElementsByTag("td").text();
                         strRemainBusStop = arrInfoElem.child(3).getElementsByTag("td").text();
-                    }
-                    else {
+                    } else {
                         endBusStopName = null;
                         strRemainBusStop = secondChild.getElementsByTag("td").text();
                     }
@@ -333,32 +288,215 @@ public class Parser {
         return null;
     }
 
-    // 버스위치정보 검색
-    public LinkedHashMap<String,String> getRouteByUrl(String url) {
-        Document doc;
-        try {
-            doc = Jsoup.connect(url).get();
-            Elements titles = doc.select(".bl");
-            LinkedHashMap<String, String> linkList = new LinkedHashMap<String, String>();
-            if( !titles.isEmpty() ) {
-                for(Element e : titles) {
-                    for(Element e2 : e.children()) {
-                        if( e2.classNames().contains("bloc_b") ) { // nsbus는 저상버스
-                            System.out.print("위치 : ");
-                            System.out.println(e2.text());
-                        }
-                        else
-                            System.out.println(e2.child(1).text().substring( e2.child(1).text().indexOf(". ")+2 ));
-                    }
-                    //System.out.println(e.text());
-                }
-            }
+    /**
+     * 노선의 상세정보(기점, 종점, 배차간격 등)를 얻습니다.
+     * 주로, 버스위치정보 얻을 때 getBusPosInfos()와 함께 사용합니다.
+     *
+     * @param mRealm 현재 쓰레드에서 생성한 realm 인스턴스
+     * @param mRoute 업데이트할 노선
+     * @return 업데이트한 노선
+     */
+    public Route getRouteInfo(Realm mRealm, Route mRoute) {
+        StringBuilder urlBuilder = new StringBuilder(openapiDomain);
+        urlBuilder.append("BusRouteInfoInqireService/getRouteInfoIem")
+                .append("?ServiceKey=").append(serviceKey) // 공공데이터 인증키
+                .append("&numOfRows=9999") // 검색건수
+                .append("&pageNo=1") // 페이지 번호
+                .append("&cityCode=").append(getDaeguCityCode()) // 대구도시코드
+                .append("&routeId=DGB").append(mRoute.getId()); // 노선ID
 
-            return linkList;
+        try {
+            /* 공공데이터에서 노선상세정보 가져오기 시작 */
+            Document doc = Jsoup.connect(urlBuilder.toString()).get();
+            Elements routeInfoElems = doc.select("item");
+            if (routeInfoElems.isEmpty())
+                return null;
+            Element routeInfoElem = routeInfoElems.get(0);
+
+            mRealm.beginTransaction();
+            mRoute.setStartBusStopName(routeInfoElem.getElementsByTag("startnodenm").text());
+            mRoute.setEndBusStopName(routeInfoElem.getElementsByTag("endnodenm").text());
+
+            String startTime = routeInfoElem.getElementsByTag("startvehicletime").text();
+            String endTime = routeInfoElem.getElementsByTag("endvehicletime").text();
+            mRoute.setStartHour(Integer.parseInt(startTime.substring(0, 2)));
+            mRoute.setStartMin(Integer.parseInt(startTime.substring(2)));
+            ;
+            mRoute.setEndHour(Integer.parseInt(endTime.substring(0, 2)));
+            mRoute.setEndMin(Integer.parseInt(endTime.substring(2)));
+
+            // 배차간격은 휴일만 있는 것도 있고 평일만 있는 것이 존재하는 것을 확인
+            Elements intervalTimeElem = routeInfoElem.getElementsByTag("intervaltime");
+            Elements intervalSatTimeElem = routeInfoElem.getElementsByTag("intervalsattime");
+            Elements intervalSunTimeElem = routeInfoElem.getElementsByTag("intervalsuntime");
+            if (!intervalTimeElem.isEmpty())
+                mRoute.setInterval(Integer.parseInt(intervalTimeElem.text()));
+            if (!intervalSatTimeElem.isEmpty())
+                mRoute.setIntervalSat(Integer.parseInt(intervalSatTimeElem.text()));
+            if (!intervalSunTimeElem.isEmpty())
+                mRoute.setIntervalSun(Integer.parseInt(intervalSunTimeElem.text()));
+            mRealm.commitTransaction();
+            /* 공공데이터에서 노선상세정보 가져오기 끝 */
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
+
+        return mRoute;
+    }
+
+    /**
+     * 특정 노선의 모든 버스위치정보를 얻습니다.
+     * 기존의 버스위치정보가 있을 경우 updateBusPosInfos() 메소드를 사용하세요.
+     *
+     * @param mRealm    현재 쓰레드에서 생성한 realm 인스턴스
+     * @param routeId    검색할 노선 ID
+     * @param isForward 정방향이면 true, 역방향이면 false
+     * @return 생성된 버스위치정보 배열
+     */
+    public BusPosInfo[] getBusPosInfos(Realm mRealm, String routeId, boolean isForward) {
+        BusPosInfo[] busPosInfos = null;
+
+        try {
+            StringBuilder urlBuilder = new StringBuilder(daeguDomain);
+            urlBuilder.append("realTime.do?act=posInfo&roNo=")
+                    .append("&roId=").append(routeId)
+                    .append("&moveDir=").append(isForward ? 1 : 0);
+            /* 대구버스에서 노선 정류소리스트 및 버스위치정보 가져오기 시작 */
+
+            Document doc = Jsoup.connect(urlBuilder.toString()).get();
+            Elements listElems = doc.select("ol.bl");
+            if (listElems.isEmpty())
+                return null;
+
+            // 노선 정류소리스트 저장
+            Elements busStopElems = listElems.select("span.pl39");
+            int busStopElemsSize = busStopElems.size();
+            busPosInfos = new BusPosInfo[busStopElemsSize];
+            for (int busPosInfoIndex = 0; busPosInfoIndex < busStopElemsSize; busPosInfoIndex++) {
+                Element busStopElem = busStopElems.get( busPosInfoIndex );
+                String rawBusStopName = busStopElem.select(".pl39").text();
+                int startOffset = rawBusStopName.indexOf(". ");
+                String busStopName = rawBusStopName.substring(startOffset + 2);
+
+                BusStop mBusStop = mRealm.where(BusStop.class).equalTo("name", busStopName).findFirst();
+                busPosInfos[busPosInfoIndex] = new BusPosInfo(mBusStop);
+            }
+
+            // 버스위치정보 저장
+            Elements busPosElems = listElems.select("li.bloc_b");
+            if( !busPosElems.isEmpty() ) {
+                for(int busPosElemIndex = 0; busPosElemIndex < busPosElems.size(); busPosElemIndex++) {
+                    Element busPosElem = busPosElems.get(busPosElemIndex);
+                    String rawBusId = busPosElem.text();
+                    int endOffset = rawBusId.indexOf(" (");
+                    String busId = rawBusId.substring(0, endOffset);
+
+                    int busPosInfoIndex = busPosElem.elementSiblingIndex() - busPosElemIndex - 1;
+                    busPosInfos[busPosInfoIndex].setBusId(busId);
+                    if( busPosElem.hasClass("nsbus") )
+                        busPosInfos[busPosInfoIndex].setNonStepBus(true);
+                }
+            }
+            /* 대구버스에서 노선정류소정보 및 버스위치정보 가져오기 끝 */
+
+ /*           urlBuilder.append("BusRouteInfoInqireService/getRouteAcctoThrghSttnList")
+                    .append("?ServiceKey=").append(serviceKey) // 공공데이터 인증키
+                    .append("&numOfRows=9999") // 검색건수
+                    .append("&pageNo=1") // 페이지 번호
+                    .append("&cityCode=").append(getDaeguCityCode()) // 대구도시코드
+                    .append("&routeId=DGB").append(mRoute.getId()); // 노선ID
+
+            *//* 공공데이터에서 노선별경유정류소목록 가져오기 시작 *//*
+            doc = Jsoup.connect(urlBuilder.toString()).get();
+            Elements busStopElems = doc.select("item");
+            if (busStopElems.isEmpty())
+                return null;
+            int busStopElemsSize = busStopElems.size();
+            if(isForward) { // 정방향
+                if( busPosInfoList == null )
+                    busPosInfoList = new ArrayList<>();
+                else
+                    busPosInfoList.clear();
+
+                for(int itemIndex = 0; itemIndex < busStopElemsSize; itemIndex++) { // 삼항연산자는 역방향이면 최초 item노드는 배제하기 위해서임
+                    Element busStopElem = busStopElems.get(itemIndex);
+                    int nodeord = Integer.parseInt( busStopElem.getElementsByTag("nodeord").text() );
+                    if( nodeord == 1 && itemIndex != 0 )
+                        break;
+
+                    String nodeId = busStopElem.getElementsByTag("nodeid").text().substring(3);
+                    BusStop mBusStop = mRealm.where(BusStop.class).equalTo("id", nodeId).findFirst();
+                    busPosInfoList.add( new BusPosInfo(mBusStop) );
+                }
+                busPosInfos = busPosInfoList.toArray(new BusPosInfo[busPosInfoList.size()]);
+            } else { // 역방향
+                int itemIndex;
+                for(itemIndex = 1; itemIndex < busStopElemsSize; itemIndex++) { // 삼항연산자는 역방향이면 최초 item노드는 배제하기 위해서임
+                    Element busStopElem = busStopElems.get(itemIndex);
+                    int nodeord = Integer.parseInt( busStopElem.getElementsByTag("nodeord").text() );
+                    if( nodeord == 1 ) {
+                        busPosInfos = new BusPosInfo[busStopElemsSize - itemIndex];
+                        break;
+                    }
+                }
+                int firstIndex = itemIndex;
+                for(; itemIndex < busStopElemsSize; itemIndex++) {
+                    Element busStopElem = busStopElems.get(itemIndex);
+                    String nodeId = busStopElem.getElementsByTag("nodeid").text().substring(3);
+                    BusStop mBusStop = mRealm.where(BusStop.class).equalTo("id", nodeId).findFirst();
+                    busPosInfos[itemIndex-firstIndex] = new BusPosInfo(mBusStop);
+                }
+            }
+            *//* 공공데이터에서 노선별경유정류소목록 가져오기 끝 */
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return busPosInfos;
+    }
+
+    /**
+     * 특정 노선의 모든 버스위치정보를 업데이트합니다.
+     * 기존의 버스위치정보가 없을 경우 getBusPosInfos() 먼저 사용하세요.
+     *
+     * @param routeId      검색할 노선 ID
+     * @param isForward   정방향이면 true, 역방향이면 false
+     * @param busPosInfos 버스위치정보 배열
+     * @return 업데이트된 버스위치정보 배열
+     */
+    public BusPosInfo[] updateBusPosInfos(String routeId, boolean isForward, BusPosInfo[] busPosInfos) {
+        for(BusPosInfo mBusPosInfo : busPosInfos) // 버스ID 초기화
+            mBusPosInfo.setBusId(null);
+
+        StringBuilder urlBuilder = new StringBuilder(daeguDomain);
+        urlBuilder.append("realTime.do?act=posInfo&roNo=")
+                .append("&roId=").append(routeId)
+                .append("&moveDir=").append(isForward ? 1 : 0);
+
+        try {
+            Document doc = Jsoup.connect(urlBuilder.toString()).get();
+            // 버스위치정보 저장
+            Elements busPosElems = doc.select("li.bloc_b");
+            if( !busPosElems.isEmpty() ) {
+                for(int busPosElemIndex = 0; busPosElemIndex < busPosElems.size(); busPosElemIndex++) {
+                    Element busPosElem = busPosElems.get(busPosElemIndex);
+                    String rawBusId = busPosElem.text();
+                    int endOffset = rawBusId.indexOf(" (");
+                    String busId = rawBusId.substring(0, endOffset);
+
+                    int busPosInfoIndex = busPosElem.elementSiblingIndex() - busPosElemIndex - 1;
+                    busPosInfos[busPosInfoIndex].setBusId(busId);
+                    if( busPosElem.hasClass("nsbus") )
+                        busPosInfos[busPosInfoIndex].setNonStepBus(true);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return busPosInfos;
     }
 
     /**
