@@ -7,6 +7,10 @@
     <string name="action_bluetooth">Bluetooth</string>
     <string name="section_format">Hello World from section: %1$d</string>
 
+    <string name="api_service_key">%2FINPAsm7NTY0H7pQwDLNdW5dFd%2FhZxqvngMPEUKPW2de5TVRU2fhgI6x6CsUpkhjJYmH5tG4vYCahsntFWxJ%2Bg%3D%3D</string>
+    <string name="daegu_domain">http://m.businfo.go.kr/bp/m/</string>
+    <string name="open_api_domain">http://openapi.tago.go.kr/openapi/service/</string>
+
     <string name="page_title_0">즐겨찾기</string>
     <string name="page_title_1">노선검색</string>
     <string name="page_title_2">정류소검색</string>
@@ -16,4 +20,6 @@
     <string name="busstop_search_view_hint">정류소명 또는 번호를 입력하세요</string>
 
     <string name="progress_text">데이터베이스 최신화 중</string>
+    <string name="no_history">최근 기록이 없습니다</string>
+    <string name="no_result">검색결과가 없습니다</string>
 </resources>

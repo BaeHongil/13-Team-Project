@@ -1,5 +1,7 @@
 package kr.ac.knu.odego.common;
 
+import android.content.Context;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -10,6 +12,8 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import io.realm.Realm;
+import kr.ac.knu.odego.OdegoApplication;
+import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.item.ArrInfo;
 import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
@@ -17,21 +21,25 @@ import kr.ac.knu.odego.item.Route;
 import kr.ac.knu.odego.item.RouteArrInfo;
 
 public class Parser {
-    private static Parser instance;
-    private String daeguDomain = "http://m.businfo.go.kr/bp/m/";
-    private String openapiDomain = "http://openapi.tago.go.kr/openapi/service/";
-    private String serviceKey = "%2FINPAsm7NTY0H7pQwDLNdW5dFd%2FhZxqvngMPEUKPW2de5TVRU2fhgI6x6CsUpkhjJYmH5tG4vYCahsntFWxJ%2Bg%3D%3D";
+    private String daeguDomain;
+    private String openapiDomain;
+    private String serviceKey;
     private String daeguCityCode;
     private ArrayList<RouteArrInfo> routeArrInfoList;
 
     private Parser() {
+        Context mContext = OdegoApplication.getContext();
+        daeguDomain = mContext.getString(R.string.daegu_domain);
+        openapiDomain = mContext.getString(R.string.open_api_domain);
+        serviceKey = mContext.getString(R.string.api_service_key);
+    }
 
+    private static class ParserHolder { // Initialization-on-demand holder idiom
+        public static final Parser INSTANCE = new Parser();
     }
 
     public static Parser getInstance() {
-        if( instance == null )
-            instance = new Parser();
-        return instance;
+        return ParserHolder.INSTANCE;
     }
 
     /**
@@ -292,11 +300,10 @@ public class Parser {
      * 노선의 상세정보(기점, 종점, 배차간격 등)를 얻습니다.
      * 주로, 버스위치정보 얻을 때 getBusPosInfos()와 함께 사용합니다.
      *
-     * @param mRealm 현재 쓰레드에서 생성한 realm 인스턴스
-     * @param mRoute 업데이트할 노선
+     * @param mRoute 업데이트할 노선(Realm에서 copyFromRealm()된 객체만 가능합니다)
      * @return 업데이트한 노선
      */
-    public Route getRouteInfo(Realm mRealm, Route mRoute) {
+    public Route getRouteInfo(Route mRoute) {
         StringBuilder urlBuilder = new StringBuilder(openapiDomain);
         urlBuilder.append("BusRouteInfoInqireService/getRouteInfoIem")
                 .append("?ServiceKey=").append(serviceKey) // 공공데이터 인증키
@@ -313,7 +320,7 @@ public class Parser {
                 return null;
             Element routeInfoElem = routeInfoElems.get(0);
 
-            mRealm.beginTransaction();
+         //   mRealm.beginTransaction(); // mRoute를 DB에 반영할 때만 사용
             mRoute.setStartBusStopName(routeInfoElem.getElementsByTag("startnodenm").text());
             mRoute.setEndBusStopName(routeInfoElem.getElementsByTag("endnodenm").text());
 
@@ -335,7 +342,7 @@ public class Parser {
                 mRoute.setIntervalSat(Integer.parseInt(intervalSatTimeElem.text()));
             if (!intervalSunTimeElem.isEmpty())
                 mRoute.setIntervalSun(Integer.parseInt(intervalSunTimeElem.text()));
-            mRealm.commitTransaction();
+        //    mRealm.commitTransaction();
             /* 공공데이터에서 노선상세정보 가져오기 끝 */
         } catch (IOException e) {
             e.printStackTrace();

@@ -130,7 +130,8 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
     public void getBusPosInfosTest() throws Exception {
         String methodName = getMethodName(Thread.currentThread().getStackTrace());
 
-        Route mRoute = mRealm.where(Route.class).equalTo("id", "3000306000").findFirst();
+        Route routeRealm = mRealm.where(Route.class).equalTo("id", "3000306000").findFirst();
+        Route mRoute = mRealm.copyFromRealm(routeRealm);
         BusPosInfo[] busPosInfos = mParser.getBusPosInfos(mRealm, mRoute.getId(), true);
         busPosInfos = mParser.updateBusPosInfos(mRoute.getId(), true, busPosInfos);
         for( BusPosInfo mBusPosInfo : busPosInfos) {
@@ -139,7 +140,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
                 Log.i(methodName, (mBusPosInfo.isNonStepBus() ? "저상":"") + mBusPosInfo.getBusId());
         }
 
-        mParser.getRouteInfo(mRealm, mRoute);
+        mParser.getRouteInfo(mRoute);
         Log.i(methodName, "시작시간" + mRoute.getStartHour());
         Log.i(methodName, "시작분" + mRoute.getStartMin());
         Log.i(methodName, "배차간격" + mRoute.getInterval());

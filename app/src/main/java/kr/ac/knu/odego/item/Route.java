@@ -29,6 +29,8 @@ public class Route extends RealmObject {
     private int interval;
     private int intervalSat;
     private int intervalSun;
+    @Index
+    private int historyIndex; // 최근기록
 
     public void setEnumBusType(BusType busType) {
         setType( busType.name() );

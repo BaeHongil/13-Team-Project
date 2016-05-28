@@ -24,8 +24,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+
 import io.realm.Realm;
-import io.realm.RealmConfiguration;
+import io.realm.RealmResults;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.item.BusStop;
@@ -37,10 +39,8 @@ public class MainActivity extends AppCompatActivity
     private CoordinatorLayout mContentsLayout;
     private ViewPager mViewPager;
     private BluetoothAdapter mBtAdapter;
-    private final boolean IS_BT = false;
 
     private Realm mRealm;
-    private RealmConfiguration busDBRealmConfig;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +52,10 @@ public class MainActivity extends AppCompatActivity
         mContentsLayout = (CoordinatorLayout) findViewById(R.id.contents_layout);
         // fragment 탭 페이지 설정
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+        mSectionsPagerAdapter.addFragment(new FavoriteFragment(), getString(R.string.page_title_0));
+        mSectionsPagerAdapter.addFragment(new RouteSearchFragment(), getString(R.string.page_title_1));
+        mSectionsPagerAdapter.addFragment(new BusStopSearchFragment(), getString(R.string.page_title_2));
+        mSectionsPagerAdapter.addFragment(new TheOtherFragment(), getString(R.string.page_title_3));
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
@@ -79,83 +83,12 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         // 블루투스 어뎁터 설정
-        if( IS_BT )
-            mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
         // Realm 설정
-        busDBRealmConfig = new RealmConfiguration.Builder(this)
-                .name("busdb.realm")
-                .build();
-
-        Realm.setDefaultConfiguration(busDBRealmConfig);
-        mRealm = Realm.getInstance(busDBRealmConfig);
+        mRealm = Realm.getDefaultInstance();
         // Parser로 DB 생성
-        new AsyncTask<Context, Context, Boolean>() {
-            @Override
-            protected Boolean doInBackground(Context... params) {
-                Realm mRealm = null;
-                Boolean isProgress = false;
-                try {
-                    mRealm = Realm.getDefaultInstance();
-                    Log.d("Route.Count()", mRealm.where(Route.class).count() + "");
-                    boolean isBusStopDB = true;
-                    boolean isRouteDB = true;
-                    if (mRealm.where(BusStop.class).count() == 0)
-                        isBusStopDB = false;
-                    if (mRealm.where(Route.class).count() == 0)
-                        isRouteDB = false;
-                    if (isBusStopDB && isRouteDB) // DB 둘 다 있을 때는 바로 끝내기
-                        return isProgress;
-
-                    isProgress = true;
-                    publishProgress(params[0]);
-                    final Parser mParser = Parser.getInstance();
-                    if (!isBusStopDB && !isRouteDB) { // DB 둘 다 없을 때는 Thread 하나 더 생성해서 DB생성
-                        Thread busStopThread = new Thread() {
-                            @Override
-                            public void run() {
-                                Realm mRealm = null;
-                                try {
-                                    mRealm = Realm.getDefaultInstance();
-                                    mParser.createBusStopDB(mRealm, false);
-                                } finally {
-                                    if (mRealm != null)
-                                        mRealm.close();
-                                }
-                            }
-                        };
-                        busStopThread.start();
-                        mParser.createRouteDB(mRealm, false);
-                        busStopThread.join();
-                    } else if ( !isBusStopDB )
-                        mParser.createBusStopDB(mRealm, false);
-                    else
-                        mParser.createRouteDB(mRealm, false);
-                } catch (InterruptedException e) { // busStopThread.join()에 대한 Exception
-                    e.printStackTrace();
-                } finally {
-                    if (mRealm != null)
-                        mRealm.close();
-                }
-
-                return isProgress;
-            }
-
-            @Override
-            protected void onProgressUpdate(Context... values) {
-                Context mContext = values[0];
-                View.inflate(mContext, R.layout.acitivity_progress, mContentsLayout);
-                mViewPager.setVisibility(View.INVISIBLE);
-            }
-
-            @Override
-            protected void onPostExecute(Boolean aBoolean) {
-                if( aBoolean ) {
-                    mContentsLayout.removeView( mContentsLayout.findViewById(R.id.progress_layout) );
-                    mViewPager.setVisibility(View.VISIBLE);
-                }
-            }
-        }.execute(this);
+        new DataBaseCreateAsyncTask().execute(this);
     }
 
     @Override
@@ -187,7 +120,7 @@ public class MainActivity extends AppCompatActivity
         getMenuInflater().inflate(R.menu.main, menu);
         MenuItem btMenuItem = menu.findItem(R.id.action_bluetooth);
 
-        if( IS_BT ) {
+        if( mBtAdapter != null ) {
             if (mBtAdapter.isEnabled())
                 btMenuItem.setIcon(R.drawable.bt_on);
             else
@@ -205,7 +138,7 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.action_bluetooth) {
-            if(IS_BT) {
+            if(mBtAdapter != null) {
                 if ( mBtAdapter.isEnabled() ) {
                     mBtAdapter.disable();
                     Toast.makeText(this, "Bluetooth를 끕니다", Toast.LENGTH_SHORT).show();
@@ -251,39 +184,120 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    public void clearHistory() {
+        mRealm.executeTransactionAsync(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                RealmResults<BusStop> busStopResults = realm.where(BusStop.class).findAll();
+                for( BusStop mBusStop : busStopResults )
+                    mBusStop.setHistoryIndex(0);
+                RealmResults<Route> RouteResults = realm.where(Route.class).findAll();
+                for( Route mRoute : RouteResults )
+                    mRoute.setHistoryIndex(0);
+            }
+        });
+    }
 
     /**
      * Fragement Page 어뎁터
      */
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
+        private ArrayList<Fragment> mFragmentList = new ArrayList<>();
+        private ArrayList<String> mFragmentTitleList = new ArrayList<>();
 
         public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 
+        public void addFragment(Fragment fragment, String title) {
+            mFragmentList.add(fragment);
+            mFragmentTitleList.add(title);
+        }
+
         @Override
         public Fragment getItem(int position) {
-            return PlaceholderFragment.newInstance(position);
+            return mFragmentList.get(position);
         }
 
         @Override
         public int getCount() {
-            return 4;
+            return mFragmentList.size();
         }
 
         @Override
         public CharSequence getPageTitle(int position) {
-            switch (position) {
-                case 0:
-                    return getString(R.string.page_title_0);
-                case 1:
-                    return getString(R.string.page_title_1);
-                case 2:
-                    return getString(R.string.page_title_2);
-                case 3:
-                    return getString(R.string.page_title_3);
+            return mFragmentTitleList.get(position);
+        }
+    }
+
+
+    /**
+     * 버스정류장, 노선 DB 생성 AsyncTask
+     */
+    private class DataBaseCreateAsyncTask extends AsyncTask<Context, Context, Boolean> {
+        @Override
+        protected Boolean doInBackground(Context... params) {
+            Realm mRealm = null;
+            Boolean isProgress = false;
+            try {
+                mRealm = Realm.getDefaultInstance();
+                Log.d("Route.Count()", mRealm.where(Route.class).count() + "");
+                boolean isBusStopDB = true;
+                boolean isRouteDB = true;
+                if (mRealm.where(BusStop.class).count() == 0)
+                    isBusStopDB = false;
+                if (mRealm.where(Route.class).count() == 0)
+                    isRouteDB = false;
+                if (isBusStopDB && isRouteDB) // DB 둘 다 있을 때는 바로 끝내기
+                    return isProgress;
+
+                isProgress = true;
+                publishProgress(params[0]);
+                final Parser mParser = Parser.getInstance();
+                if (!isBusStopDB && !isRouteDB) { // DB 둘 다 없을 때는 Thread 하나 더 생성해서 DB생성
+                    Thread busStopThread = new Thread() {
+                        @Override
+                        public void run() {
+                            Realm mRealm = null;
+                            try {
+                                mRealm = Realm.getDefaultInstance();
+                                mParser.createBusStopDB(mRealm, false);
+                            } finally {
+                                if (mRealm != null)
+                                    mRealm.close();
+                            }
+                        }
+                    };
+                    busStopThread.start();
+                    mParser.createRouteDB(mRealm, false);
+                    busStopThread.join();
+                } else if ( !isBusStopDB )
+                    mParser.createBusStopDB(mRealm, false);
+                else
+                    mParser.createRouteDB(mRealm, false);
+            } catch (InterruptedException e) { // busStopThread.join()에 대한 Exception
+                e.printStackTrace();
+            } finally {
+                if (mRealm != null)
+                    mRealm.close();
             }
-            return null;
+
+            return isProgress;
+        }
+
+        @Override
+        protected void onProgressUpdate(Context... values) {
+            Context mContext = values[0];
+            View.inflate(mContext, R.layout.activity_main_progress, mContentsLayout);
+            mViewPager.setVisibility(View.INVISIBLE);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            if( aBoolean ) {
+                mContentsLayout.removeView( mContentsLayout.findViewById(R.id.progress_layout) );
+                mViewPager.setVisibility(View.VISIBLE);
+            }
         }
     }
 }

@@ -1,62 +1,55 @@
 package kr.ac.knu.odego.adapter;
 
-import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 
-import java.util.ArrayList;
-
-import kr.ac.knu.odego.common.ListItemView;
+import io.realm.OrderedRealmCollection;
+import io.realm.RealmRecyclerViewAdapter;
+import kr.ac.knu.odego.R;
+import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Favorite;
+import kr.ac.knu.odego.item.Route;
+import kr.ac.knu.odego.main.FavoriteFragment;
 
 /**
  * Created by BHI on 2016-05-14.
  */
-public class FavoriteListAdapter extends BaseAdapter {
-    private Context mContext;
-    private ArrayList<Favorite> mFavoriteList;
+public class FavoriteListAdapter extends RealmRecyclerViewAdapter<Favorite, FavoriteListAdapter.FavoriteViewHolder> {
+    private final int ROUTE_ICON = R.drawable.bus_01;
+    private final int BUSSTOP_ICON = R.drawable.bus_stop_01;
+    FavoriteFragment fragment;
 
-    public FavoriteListAdapter(Context mContext) {
-        this.mContext = mContext;
-
-        setmFavoriteList( new ArrayList<Favorite>() );
-    }
-
-    public void setmFavoriteList(ArrayList<Favorite> mFavoriteList) {
-        this.mFavoriteList = mFavoriteList;
-    }
-
-    public ArrayList<Favorite> getmFavoriteList() {
-        return mFavoriteList;
+    public FavoriteListAdapter(FavoriteFragment fragment, OrderedRealmCollection<Favorite> data, boolean autoUpdate) {
+        super(fragment.getContext(), data, autoUpdate);
+        this.fragment = fragment;
     }
 
     @Override
-    public int getCount() {
-        return mFavoriteList.size();
+    public FavoriteViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View itemView = inflater.inflate(R.layout.fragment_search_list_item, parent, false);
+        return new FavoriteViewHolder(itemView);
     }
 
     @Override
-    public Object getItem(int position) {
-        return mFavoriteList.get(position);
+    public void onBindViewHolder(FavoriteViewHolder holder, int position) {
+        Favorite mFavorite = getData().get(position);
+        if( mFavorite.getMBusStop() != null ) {
+            BusStop mBusStop = mFavorite.getMBusStop();
+            holder.mItemIcon.setImageResource(BUSSTOP_ICON);
+            holder.mItemName.setText(mBusStop.getName());
+            holder.mItemDetail.setText(mBusStop.getNo());
+        } else {
+            Route mRoute = mFavorite.getMRoute();
+            holder.mItemIcon.setImageResource(BUSSTOP_ICON);
+            holder.mItemName.setText(mRoute.getNo());
+            holder.mItemDetail.setText(mRoute.getDirection());
+        }
     }
 
-    @Override
-    public long getItemId(int position) {
-        return position;
-    }
+    public class FavoriteViewHolder extends ViewHolder<Favorite> {
 
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ListItemView mListItemView;
-        Favorite mFavorite = mFavoriteList.get(position);
-        if( convertView != null ) {
-            mListItemView = (ListItemView) convertView;
-            mListItemView.setItemNameText(mFavorite.getName());
-            mListItemView.setItemDetailText(mFavorite.getUrl());
-        } else
-            mListItemView = new ListItemView(mContext, mFavorite);
-
-        return mListItemView;
+        public FavoriteViewHolder(View itemView) {
+            super(itemView);
+        }
     }
 }

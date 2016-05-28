@@ -1,63 +1,69 @@
 package kr.ac.knu.odego.adapter;
 
-import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 
-import io.realm.RealmResults;
-import kr.ac.knu.odego.common.ListItemView;
+import io.realm.OrderedRealmCollection;
+import io.realm.RealmRecyclerViewAdapter;
+import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.item.Route;
+import kr.ac.knu.odego.main.RouteSearchFragment;
 
 /**
  * Created by BHI on 2016-05-14.
  */
-public class RouteListAdapter extends BaseAdapter {
-    private Context mContext;
-    private RealmResults<Route> mRouteList;
+public class RouteListAdapter extends RealmRecyclerViewAdapter<Route, RouteListAdapter.RouteViewHolder> {
+    private final int ICON = R.drawable.bus_01;
+    private RouteSearchFragment fragment;
+    private int dataLimit;
 
-    public RouteListAdapter(Context mContext) {
-        this.mContext = mContext;
+    public RouteListAdapter(RouteSearchFragment fragment, OrderedRealmCollection<Route> data, boolean autoUpdate) {
+        super(fragment.getContext(), data, autoUpdate);
+        this.fragment = fragment;
+        resetDataLimit();
     }
 
-    public void setmRouteList(RealmResults<Route> mRouteList) {
-        this.mRouteList = mRouteList;
+    // 결과개수 제한
+    public void setDataLimit(int dataLimit) {
+        this.dataLimit = dataLimit;
     }
 
-    public RealmResults<Route> getmRouteList() {
-        return mRouteList;
-    }
-
-    @Override
-    public int getCount() {
-        if( mRouteList == null )
-            return 0;
-        return mRouteList.size();
+    public void resetDataLimit() {
+        this.dataLimit = -1;
     }
 
     @Override
-    public Object getItem(int position) {
-        if( mRouteList == null )
-            return null;
-        return mRouteList.get(position);
+    public int getItemCount() {
+        int itemCount = super.getItemCount();
+        if( dataLimit != -1 && dataLimit < itemCount )
+            return dataLimit;
+        return itemCount;
     }
 
     @Override
-    public long getItemId(int position) {
-        return position;
+    public RouteViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View itemView = inflater.inflate(R.layout.fragment_search_list_item, parent, false);
+        return new RouteViewHolder(itemView);
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ListItemView mListItemView;
-        Route mRoute = mRouteList.get(position);
-        if( convertView != null ) {
-            mListItemView = (ListItemView) convertView;
-            mListItemView.setItemNameText(mRoute.getNo());
-            mListItemView.setItemDetailText(mRoute.getDirection());
-        } else
-            mListItemView = new ListItemView(mContext, mRoute);
+    public void onBindViewHolder(RouteViewHolder holder, int position) {
+        Route mRoute = getData().get(position);
+        holder.data = mRoute;
+        holder.mItemIcon.setImageResource(ICON);
+        holder.mItemName.setText(mRoute.getNo());
+        holder.mItemDetail.setText(mRoute.getDirection());
+    }
 
-        return mListItemView;
+    public class RouteViewHolder extends ViewHolder<Route> implements View.OnClickListener {
+        public RouteViewHolder(View itemView) {
+            super(itemView);
+            itemView.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            fragment.addRouteHistory(data.getId());
+        }
     }
 }
