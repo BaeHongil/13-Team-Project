@@ -40,7 +40,7 @@ public class FavoriteListAdapter extends RealmRecyclerViewAdapter<Favorite, Favo
             holder.mItemDetail.setText(mBusStop.getNo());
         } else {
             Route mRoute = mFavorite.getMRoute();
-            holder.mItemIcon.setImageResource(BUSSTOP_ICON);
+            holder.mItemIcon.setImageResource(ROUTE_ICON);
             holder.mItemName.setText(mRoute.getNo());
             holder.mItemDetail.setText(mRoute.getDirection());
         }

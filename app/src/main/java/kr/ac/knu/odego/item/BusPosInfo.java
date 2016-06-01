@@ -14,6 +14,6 @@ import lombok.Setter;
 public class BusPosInfo {
     @NonNull
     private BusStop mBusStop;
-    private String busId;
+    private String busId; // 해당 정류소에 버스가 있을 때만 값이 존재
     private boolean isNonStepBus;
 }

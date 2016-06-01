@@ -23,7 +23,7 @@ import kr.ac.knu.odego.item.RouteArrInfo;
 public class Parser {
     private String daeguDomain;
     private String openapiDomain;
-    private String serviceKey;
+    private String apiServiceKey;
     private String daeguCityCode;
     private ArrayList<RouteArrInfo> routeArrInfoList;
 
@@ -31,7 +31,7 @@ public class Parser {
         Context mContext = OdegoApplication.getContext();
         daeguDomain = mContext.getString(R.string.daegu_domain);
         openapiDomain = mContext.getString(R.string.open_api_domain);
-        serviceKey = mContext.getString(R.string.api_service_key);
+        apiServiceKey = mContext.getString(R.string.api_service_key);
     }
 
     private static class ParserHolder { // Initialization-on-demand holder idiom
@@ -51,7 +51,7 @@ public class Parser {
         if( daeguCityCode == null) {
             StringBuilder urlBuilder = new StringBuilder(openapiDomain);
             urlBuilder.append("BusSttnInfoInqireService/getCtyCodeList")
-                    .append("?ServiceKey=").append(serviceKey) /*Service Key*/
+                    .append("?ServiceKey=").append(apiServiceKey) /*Service Key*/
                     .append("&numOfRows=999") /*검색건수*/
                     .append("&pageNo=1"); /*페이지 번호*/
 
@@ -80,7 +80,7 @@ public class Parser {
         // 버스정류소 리스트URL
         StringBuilder urlBuilder = new StringBuilder(openapiDomain);
         urlBuilder.append("BusSttnInfoInqireService/getSttnNoList")
-                .append("?ServiceKey=").append(serviceKey) // 공공데이터 인증키
+                .append("?ServiceKey=").append(apiServiceKey) // 공공데이터 인증키
                 .append("&numOfRows=9999") // 검색건수
                 .append("&pageNo=1") // 페이지 번호
                 .append("&cityCode=").append(getDaeguCityCode()); // 대구도시코드
@@ -138,7 +138,7 @@ public class Parser {
     public void createRouteDB(Realm mRealm, boolean isDeleteAll) {
         StringBuilder urlBuilder = new StringBuilder(openapiDomain);
         urlBuilder.append("BusRouteInfoInqireService/getRouteNoList")
-                .append("?ServiceKey=").append(serviceKey) // 공공데이터 인증키
+                .append("?ServiceKey=").append(apiServiceKey) // 공공데이터 인증키
                 .append("&numOfRows=9999") // 검색건수
                 .append("&pageNo=1") // 페이지 번호
                 .append("&cityCode=").append(getDaeguCityCode()); // 대구도시코드
@@ -306,7 +306,7 @@ public class Parser {
     public Route getRouteInfo(Route mRoute) {
         StringBuilder urlBuilder = new StringBuilder(openapiDomain);
         urlBuilder.append("BusRouteInfoInqireService/getRouteInfoIem")
-                .append("?ServiceKey=").append(serviceKey) // 공공데이터 인증키
+                .append("?ServiceKey=").append(apiServiceKey) // 공공데이터 인증키
                 .append("&numOfRows=9999") // 검색건수
                 .append("&pageNo=1") // 페이지 번호
                 .append("&cityCode=").append(getDaeguCityCode()) // 대구도시코드
@@ -395,8 +395,8 @@ public class Parser {
                 for(int busPosElemIndex = 0; busPosElemIndex < busPosElems.size(); busPosElemIndex++) {
                     Element busPosElem = busPosElems.get(busPosElemIndex);
                     String rawBusId = busPosElem.text();
-                    int endOffset = rawBusId.indexOf(" (");
-                    String busId = rawBusId.substring(0, endOffset);
+                    int endOffset = rawBusId.indexOf("(");
+                    String busId = rawBusId.substring(0, endOffset).trim();
 
                     int busPosInfoIndex = busPosElem.elementSiblingIndex() - busPosElemIndex - 1;
                     busPosInfos[busPosInfoIndex].setBusId(busId);
@@ -407,7 +407,7 @@ public class Parser {
             /* 대구버스에서 노선정류소정보 및 버스위치정보 가져오기 끝 */
 
  /*           urlBuilder.append("BusRouteInfoInqireService/getRouteAcctoThrghSttnList")
-                    .append("?ServiceKey=").append(serviceKey) // 공공데이터 인증키
+                    .append("?ServiceKey=").append(apiServiceKey) // 공공데이터 인증키
                     .append("&numOfRows=9999") // 검색건수
                     .append("&pageNo=1") // 페이지 번호
                     .append("&cityCode=").append(getDaeguCityCode()) // 대구도시코드

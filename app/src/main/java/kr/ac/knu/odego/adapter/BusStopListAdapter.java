@@ -13,7 +13,7 @@ import kr.ac.knu.odego.main.BusStopSearchFragment;
  * Created by BHI on 2016-05-14.
  */
 public class BusStopListAdapter extends RealmRecyclerViewAdapter<BusStop, BusStopListAdapter.BusStopViewHolder> {
-    private final int ICON = R.drawable.bus_stop_01;
+    private final int BUSSTOP_ICON = R.drawable.bus_stop_01;
     private BusStopSearchFragment fragment;
     private int dataLimit;
 
@@ -50,7 +50,7 @@ public class BusStopListAdapter extends RealmRecyclerViewAdapter<BusStop, BusSto
     public void onBindViewHolder(BusStopViewHolder holder, int position) {
         BusStop mBusStop = getData().get(position);
         holder.data = mBusStop;
-        holder.mItemIcon.setImageResource(ICON);
+        holder.mItemIcon.setImageResource(BUSSTOP_ICON);
         holder.mItemName.setText(mBusStop.getName());
         holder.mItemDetail.setText(mBusStop.getNo());
     }

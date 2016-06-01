@@ -50,10 +50,12 @@ public class BusStopSearchFragment extends Fragment {
                 .notEqualTo("historyIndex", 0)
                 .findAllSorted("historyIndex", Sort.DESCENDING);
 
-        mBusstopListAdapter.updateData(historyResults);
         if( historyResults.size() == 0 ) {
             busStopListView.setVisibility(View.GONE);
             noContentsLayout.setVisibility(View.VISIBLE);
+        } else {
+            mBusstopListAdapter.setDataLimit(historyNum);
+            mBusstopListAdapter.updateData(historyResults);
         }
     }
 
@@ -69,13 +71,10 @@ public class BusStopSearchFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_search_list, container, false);
 
-        // RecylcerView Adapter 생성
-        mBusstopListAdapter = new BusStopListAdapter(this, null, false);
-        mBusstopListAdapter.setDataLimit(historyNum);
-
         // RecylcerView 생성
         busStopListView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
         busStopListView.setLayoutManager( new LinearLayoutManager(getContext() ));
+        mBusstopListAdapter = new BusStopListAdapter(this, null, false);
         busStopListView.setAdapter(mBusstopListAdapter);
 
         // 내용없는 레이아웃
@@ -112,8 +111,10 @@ public class BusStopSearchFragment extends Fragment {
                     busStopListView.setVisibility(View.GONE);
                     noContentsLayout.setVisibility(View.VISIBLE);
                 } else {
-                    busStopListView.setVisibility(View.VISIBLE);
+                    mBusstopListAdapter.resetDataLimit();
                     mBusstopListAdapter.updateData(results);
+                    busStopListView.setVisibility(View.VISIBLE);
+                    noContentsLayout.setVisibility(View.GONE);
                 }
 
                 return false;

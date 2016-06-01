@@ -49,11 +49,13 @@ public class RouteSearchFragment extends Fragment {
         historyResults = mRealm.where(Route.class)
                 .notEqualTo("historyIndex", 0)
                 .findAllSorted("historyIndex", Sort.DESCENDING);
-        mRouteListAdapter.updateData(historyResults);
 
         if( historyResults.size() == 0 ) {
             routeListView.setVisibility(View.GONE);
             noContentsLayout.setVisibility(View.VISIBLE);
+        } else {
+            mRouteListAdapter.setDataLimit(historyNum);
+            mRouteListAdapter.updateData(historyResults);
         }
     }
 
@@ -69,13 +71,10 @@ public class RouteSearchFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_search_list, container, false);
 
-        // RecylcerView Adapter 생성
-        mRouteListAdapter = new RouteListAdapter(this, null, false);
-        mRouteListAdapter.setDataLimit(historyNum);
-
         // RecylcerView 생성
         routeListView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
         routeListView.setLayoutManager(new LinearLayoutManager(getContext()));
+        mRouteListAdapter = new RouteListAdapter(this, null, false);
         routeListView.setAdapter(mRouteListAdapter);
 
         // 내용없는 레이아웃
@@ -111,8 +110,10 @@ public class RouteSearchFragment extends Fragment {
                     routeListView.setVisibility(View.GONE);
                     noContentsLayout.setVisibility(View.VISIBLE);
                 } else {
-                    routeListView.setVisibility(View.VISIBLE);
+                    mRouteListAdapter.resetDataLimit();
                     mRouteListAdapter.updateData(results);
+                    routeListView.setVisibility(View.VISIBLE);
+                    noContentsLayout.setVisibility(View.GONE);
                 }
 
                 return false;

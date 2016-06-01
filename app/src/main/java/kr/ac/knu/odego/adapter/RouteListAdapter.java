@@ -13,7 +13,7 @@ import kr.ac.knu.odego.main.RouteSearchFragment;
  * Created by BHI on 2016-05-14.
  */
 public class RouteListAdapter extends RealmRecyclerViewAdapter<Route, RouteListAdapter.RouteViewHolder> {
-    private final int ICON = R.drawable.bus_01;
+    private final int ROUTE_ICON = R.drawable.bus_01;
     private RouteSearchFragment fragment;
     private int dataLimit;
 
@@ -50,7 +50,7 @@ public class RouteListAdapter extends RealmRecyclerViewAdapter<Route, RouteListA
     public void onBindViewHolder(RouteViewHolder holder, int position) {
         Route mRoute = getData().get(position);
         holder.data = mRoute;
-        holder.mItemIcon.setImageResource(ICON);
+        holder.mItemIcon.setImageResource(ROUTE_ICON);
         holder.mItemName.setText(mRoute.getNo());
         holder.mItemDetail.setText(mRoute.getDirection());
     }
