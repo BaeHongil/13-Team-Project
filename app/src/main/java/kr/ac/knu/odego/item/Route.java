@@ -1,5 +1,7 @@
 package kr.ac.knu.odego.item;
 
+import java.util.Date;
+
 import io.realm.RealmObject;
 import io.realm.annotations.Index;
 import io.realm.annotations.PrimaryKey;
@@ -29,6 +31,7 @@ public class Route extends RealmObject {
     private int interval;
     private int intervalSat;
     private int intervalSun;
+    private Date updatedDetail;
     @Index
     private int historyIndex; // 최근기록
 

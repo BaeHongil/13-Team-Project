@@ -28,10 +28,10 @@ public class ParserTest {
         /*RouteArrInfo[] routeArrInfos = mParser.getBusStopArrInfos(null, "7021025700");
 
         for( RouteArrInfo routeArrInfo : routeArrInfos ) {
-            ArrInfo[] arrInfos = routeArrInfo.getArrInfoArray();
+            ArrInfo[] arrInfos = routeArrInfo.getArrInfos();
             for( ArrInfo arrInfo : arrInfos) {
                 if( arrInfo.getMessage() == null )
-                    System.out.println(arrInfo.getRemainBusStop() + " " + arrInfo.getRemainMin());
+                    System.out.println(arrInfo.getRemainBusStopCount() + " " + arrInfo.getRemainMin());
                 else
                     System.out.println(arrInfo.getMessage());
             }
@@ -39,8 +39,4 @@ public class ParserTest {
         }*/
     }
 
-    @Test
-    public void testIsNum() throws Exception {
-        assertThat(mParser.isNum("14"), is(true));
-    }
 }

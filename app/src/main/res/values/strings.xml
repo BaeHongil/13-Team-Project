@@ -5,11 +5,14 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_bluetooth">Bluetooth</string>
-    <string name="section_format">Hello World from section: %1$d</string>
+    <string name="network_error_msg">네트워크 연결상태를 확인해주세요</string>
+    <string name="other_err_msg">에러 발생. 어플리케이션을 재실행해주세요</string>
 
     <string name="api_service_key">%2FINPAsm7NTY0H7pQwDLNdW5dFd%2FhZxqvngMPEUKPW2de5TVRU2fhgI6x6CsUpkhjJYmH5tG4vYCahsntFWxJ%2Bg%3D%3D</string>
-    <string name="daegu_domain">http://m.businfo.go.kr/bp/m/</string>
-    <string name="open_api_domain">http://openapi.tago.go.kr/openapi/service/</string>
+    <string name="daegu_domain">http://m.businfo.go.kr/bp/m</string>
+    <string name="open_api_domain">http://openapi.tago.go.kr/openapi/service</string>
+    <string name="busstopno_list_url">http://businfo.daegu.go.kr/ba/arrbus/arrbus.do?act=findByBusStopNo&amp;bsNm=</string>
+    <string name="appserver_doamin">http://bhi.iptime.org:1313</string>
 
     <string name="page_title_0">즐겨찾기</string>
     <string name="page_title_1">노선검색</string>
@@ -22,4 +25,6 @@
     <string name="progress_text">데이터베이스 최신화 중</string>
     <string name="no_history">최근 기록이 없습니다</string>
     <string name="no_result">검색결과가 없습니다</string>
+
+    <string name="beacon_uuid">24DDF411-8CF1-440C-87CD-E368DAF9C9DE</string>
 </resources>

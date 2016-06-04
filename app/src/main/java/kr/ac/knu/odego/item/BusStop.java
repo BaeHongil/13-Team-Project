@@ -18,7 +18,7 @@ public class BusStop extends RealmObject {
     private String name; // 정류소이름
     @Index
     private String no; // 정류소번호
-    private double gpslati, gpslong; // 위도, 경도
+    private double gpsLati, gpsLong; // 위도, 경도
     @Index
     private int historyIndex; // 최근기록
 }

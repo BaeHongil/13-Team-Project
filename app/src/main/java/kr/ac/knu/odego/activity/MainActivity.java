@@ -1,4 +1,4 @@
-package kr.ac.knu.odego.main;
+package kr.ac.knu.odego.activity;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -18,13 +18,18 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -32,9 +37,14 @@ import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Route;
+import kr.ac.knu.odego.fragment.BusStopSearchFragment;
+import kr.ac.knu.odego.fragment.FavoriteFragment;
+import kr.ac.knu.odego.fragment.RouteSearchFragment;
+import kr.ac.knu.odego.fragment.TheOtherFragment;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+    private Context mContext;
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private CoordinatorLayout mContentsLayout;
     private ViewPager mViewPager;
@@ -45,6 +55,8 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mContext = this;
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -88,7 +100,7 @@ public class MainActivity extends AppCompatActivity
         // Realm 설정
         mRealm = Realm.getDefaultInstance();
         // Parser로 DB 생성
-        new DataBaseCreateAsyncTask().execute(this);
+        new DataBaseCreateAsyncTask().execute();
     }
 
     @Override
@@ -234,60 +246,50 @@ public class MainActivity extends AppCompatActivity
     /**
      * 버스정류장, 노선 DB 생성 AsyncTask
      */
-    private class DataBaseCreateAsyncTask extends AsyncTask<Context, Context, Boolean> {
+    private class DataBaseCreateAsyncTask extends AsyncTask<Void, String, Boolean> {
         @Override
-        protected Boolean doInBackground(Context... params) {
+        protected Boolean doInBackground(Void... params) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
             Realm mRealm = null;
-            Boolean isProgress = false;
             try {
                 mRealm = Realm.getDefaultInstance();
-                Log.d("Route.Count()", mRealm.where(Route.class).count() + "");
                 boolean isBusStopDB = true;
                 boolean isRouteDB = true;
-                if (mRealm.where(BusStop.class).count() == 0)
-                    isBusStopDB = false;
-                if (mRealm.where(Route.class).count() == 0)
-                    isRouteDB = false;
-                if (isBusStopDB && isRouteDB) // DB 둘 다 있을 때는 바로 끝내기
-                    return isProgress;
+                if (mRealm.where(BusStop.class).count() == 0) isBusStopDB = false;
+                if (mRealm.where(Route.class).count() == 0) isRouteDB = false;
+                if (isBusStopDB && isRouteDB) return false; // DB 둘 다 있을 때는 바로 끝내기
 
-                isProgress = true;
-                publishProgress(params[0]);
-                final Parser mParser = Parser.getInstance();
+                publishProgress(null);
+                Parser mParser = Parser.getInstance();
                 if (!isBusStopDB && !isRouteDB) { // DB 둘 다 없을 때는 Thread 하나 더 생성해서 DB생성
-                    Thread busStopThread = new Thread() {
-                        @Override
-                        public void run() {
-                            Realm mRealm = null;
-                            try {
-                                mRealm = Realm.getDefaultInstance();
-                                mParser.createBusStopDB(mRealm, false);
-                            } finally {
-                                if (mRealm != null)
-                                    mRealm.close();
-                            }
-                        }
-                    };
-                    busStopThread.start();
+                    Future future = executor.submit(new CreateBusDbCallable());
                     mParser.createRouteDB(mRealm, false);
-                    busStopThread.join();
-                } else if ( !isBusStopDB )
+                    future.get();
+                } else if ( !isBusStopDB ) { // BusStop DB만 없을 때
                     mParser.createBusStopDB(mRealm, false);
-                else
+                } else // Route DB만 없을 때
                     mParser.createRouteDB(mRealm, false);
-            } catch (InterruptedException e) { // busStopThread.join()에 대한 Exception
-                e.printStackTrace();
+            } catch (IOException IOException) {
+                publishProgress( mContext.getString(R.string.network_error_msg) );
+                return false;
+            } catch (InterruptedException | ExecutionException e) {
+                publishProgress( mContext.getString(R.string.other_err_msg) );
+                return false;
             } finally {
                 if (mRealm != null)
                     mRealm.close();
             }
 
-            return isProgress;
+            return true;
         }
 
         @Override
-        protected void onProgressUpdate(Context... values) {
-            Context mContext = values[0];
+        protected void onProgressUpdate(String... values) {
+            if(values != null) { // false면 네트워크 오류
+                String toastMsg = values[0];
+                Toast.makeText(mContext, toastMsg, Toast.LENGTH_LONG);
+                return;
+            }
             View.inflate(mContext, R.layout.activity_main_progress, mContentsLayout);
             mViewPager.setVisibility(View.INVISIBLE);
         }
@@ -298,6 +300,23 @@ public class MainActivity extends AppCompatActivity
                 mContentsLayout.removeView( mContentsLayout.findViewById(R.id.progress_layout) );
                 mViewPager.setVisibility(View.VISIBLE);
             }
+        }
+    }
+
+
+    private class CreateBusDbCallable implements Callable<Void> {
+        @Override
+        public Void call() throws Exception {
+            Parser mParser = Parser.getInstance();
+            Realm mRealm = null;
+            try {
+                mRealm = Realm.getDefaultInstance();
+                mParser.createBusStopDB(mRealm, false);
+            } finally {
+                if (mRealm != null)
+                    mRealm.close();
+            }
+            return null;
         }
     }
 }

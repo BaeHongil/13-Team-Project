@@ -7,7 +7,7 @@ import io.realm.OrderedRealmCollection;
 import io.realm.RealmRecyclerViewAdapter;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.item.BusStop;
-import kr.ac.knu.odego.main.BusStopSearchFragment;
+import kr.ac.knu.odego.fragment.BusStopSearchFragment;
 
 /**
  * Created by BHI on 2016-05-14.

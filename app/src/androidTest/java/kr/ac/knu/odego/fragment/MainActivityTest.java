@@ -1,4 +1,4 @@
-package kr.ac.knu.odego.main;
+package kr.ac.knu.odego.fragment;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
@@ -18,11 +18,10 @@ import org.junit.runner.RunWith;
 
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
+import kr.ac.knu.odego.activity.MainActivity;
 import kr.ac.knu.odego.common.Parser;
-import kr.ac.knu.odego.item.ArrInfo;
 import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.Route;
-import kr.ac.knu.odego.item.RouteArrInfo;
 
 /**
  * Created by BHI on 2016-05-24.
@@ -58,23 +57,6 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
         super.tearDown();
         if( mRealm != null )
             mRealm.close();
-    }
-
-    @Ignore
-    public void testOnCreate() throws Exception {
-        RouteArrInfo[] routeArrInfos = mParser.getBusStopArrInfos(mRealm, "7021025700");
-
-        for( RouteArrInfo routeArrInfo : routeArrInfos ) {
-            Route mRoute = routeArrInfo.getMRoute();
-            Log.i("mRealm", mRoute.getNo());
-            ArrInfo[] arrInfos = routeArrInfo.getArrInfoArray();
-            for( ArrInfo arrInfo : arrInfos) {
-                if( arrInfo.getMessage() == null )
-                    Log.i("mRealm", arrInfo.getRemainBusStop() + " " + arrInfo.getRemainMin());
-                else
-                    Log.i("mRealm", arrInfo.getMessage());
-            }
-        }
     }
 
     @Ignore
@@ -140,7 +122,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
                 Log.i(methodName, (mBusPosInfo.isNonStepBus() ? "저상":"") + mBusPosInfo.getBusId());
         }
 
-        mParser.getRouteInfo(mRoute);
+        mParser.getRouteDetailInfo(mRealm, mRoute);
         Log.i(methodName, "시작시간" + mRoute.getStartHour());
         Log.i(methodName, "시작분" + mRoute.getStartMin());
         Log.i(methodName, "배차간격" + mRoute.getInterval());

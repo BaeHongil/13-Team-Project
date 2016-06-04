@@ -1,4 +1,4 @@
-package kr.ac.knu.odego.main;
+package kr.ac.knu.odego.fragment;
 
 import android.content.Context;
 import android.os.Bundle;

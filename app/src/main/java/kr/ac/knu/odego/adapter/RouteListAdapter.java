@@ -7,7 +7,7 @@ import io.realm.OrderedRealmCollection;
 import io.realm.RealmRecyclerViewAdapter;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.item.Route;
-import kr.ac.knu.odego.main.RouteSearchFragment;
+import kr.ac.knu.odego.fragment.RouteSearchFragment;
 
 /**
  * Created by BHI on 2016-05-14.

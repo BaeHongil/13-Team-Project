@@ -9,7 +9,7 @@ import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Favorite;
 import kr.ac.knu.odego.item.Route;
-import kr.ac.knu.odego.main.FavoriteFragment;
+import kr.ac.knu.odego.fragment.FavoriteFragment;
 
 /**
  * Created by BHI on 2016-05-14.
