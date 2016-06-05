@@ -2,6 +2,7 @@ package kr.ac.knu.odego.activity;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
@@ -35,12 +36,12 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.common.Parser;
-import kr.ac.knu.odego.item.BusStop;
-import kr.ac.knu.odego.item.Route;
 import kr.ac.knu.odego.fragment.BusStopSearchFragment;
 import kr.ac.knu.odego.fragment.FavoriteFragment;
 import kr.ac.knu.odego.fragment.RouteSearchFragment;
 import kr.ac.knu.odego.fragment.TheOtherFragment;
+import kr.ac.knu.odego.item.BusStop;
+import kr.ac.knu.odego.item.Route;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -55,11 +56,14 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         mContext = this;
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        // splash 띄우기
+        startActivity( new Intent(this, SplashActivity.class) );
 
         mContentsLayout = (CoordinatorLayout) findViewById(R.id.contents_layout);
         // fragment 탭 페이지 설정

@@ -11,4 +11,9 @@
     <color name="colorAccent">#676767</color>
     <color name="colorBasis">#e9e9e9</color>
     <color name="colorBasisDark">#676767</color>
+
+    <color name="main_bus">#5ea8eb</color>
+    <color name="branch_bus">#ffaa38</color>
+    <color name="express_bus">#ff4a38</color>
+    <color name="circular_bus">#69d83c</color>
 </resources>

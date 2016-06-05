@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="#ffffff">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
+        android:gravity="left|center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="bus_number"
+            android:id="@+id/route_name"
+            android:layout_gravity="left"
+            android:layout_marginLeft="10dp"
+            android:textColor="#000000" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="bus_direction(next)"
+            android:id="@+id/bus_direction"
+            android:layout_gravity="left"
+            android:layout_marginLeft="10dp" />
+
+    </LinearLayout>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView"
+        android:layout_gravity="center_vertical|right"
+        android:layout_margin="0dp"
+        android:src="@drawable/busposinfo_bus_on" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="47dp"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="8672"
+        android:id="@+id/bus_unum"
+        android:layout_gravity="left|center_vertical"
+        android:background="#E46C0A"
+        android:gravity="left|center_vertical" />
+
+</LinearLayout>

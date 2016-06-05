@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="#f2f2f2">
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/favorite_btn"
+        android:background="@drawable/favorite_on"
+        android:layout_margin="5dp"
+        android:layout_alignParentLeft="true" />
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/routeinfo"
+        android:layout_alignTop="@+id/favorite_btn"
+        android:layout_toEndOf="@+id/favorite_btn">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="bus_number"
+            android:id="@+id/route_no"
+            android:layout_gravity="left"
+            android:layout_marginLeft="10dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="bus_direction(next)"
+            android:id="@+id/route_direction"
+            android:layout_gravity="left"
+            android:layout_marginLeft="10dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/remained_min"
+        android:layout_alignTop="@+id/favorite_btn"
+        android:layout_toStartOf="@+id/remained_busstop">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="2min"
+            android:id="@+id/remained_min1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="10min"
+            android:id="@+id/remained_min2"
+            android:layout_gravity="right" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:id="@+id/remained_busstop"
+        android:layout_alignWithParentIfMissing="false"
+        android:layout_alignTop="@+id/favorite_btn">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="1 ea"
+            android:id="@+id/remained_busstop1"
+            android:layout_gravity="right"
+            android:background="@drawable/xml_border"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="3ea"
+            android:id="@+id/remained_busstop2"
+            android:layout_gravity="right"
+        android:background="@drawable/xml_border"/>
+    </LinearLayout>
+
+</RelativeLayout>
