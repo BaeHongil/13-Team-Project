@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/busstoparrinfo_header_height"
+    android:id="@+id/header"
+    android:background="#FFb22c">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:id="@+id/header_contents">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="busstop Code"
+            android:id="@+id/busstop_no"
+            android:layout_gravity="center_horizontal"
+            android:textColor="#FFFFFF"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="busstop Name"
+            android:id="@+id/busstop_name"
+            android:layout_gravity="center_horizontal"
+            android:textColor="#FFFFFF" />
+
+
+    </LinearLayout>
+</FrameLayout>

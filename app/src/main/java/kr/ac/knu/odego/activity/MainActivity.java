@@ -1,7 +1,6 @@
 package kr.ac.knu.odego.activity;
 
 import android.bluetooth.BluetoothAdapter;
-import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -45,7 +44,6 @@ import kr.ac.knu.odego.item.Route;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
-    private Context mContext;
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private CoordinatorLayout mContentsLayout;
     private ViewPager mViewPager;
@@ -56,7 +54,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mContext = this;
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -274,10 +271,10 @@ public class MainActivity extends AppCompatActivity
                 } else // Route DB만 없을 때
                     mParser.createRouteDB(mRealm, false);
             } catch (IOException IOException) {
-                publishProgress( mContext.getString(R.string.network_error_msg) );
+                publishProgress( getBaseContext().getString(R.string.network_error_msg) );
                 return false;
             } catch (InterruptedException | ExecutionException e) {
-                publishProgress( mContext.getString(R.string.other_err_msg) );
+                publishProgress( getBaseContext().getString(R.string.other_err_msg) );
                 return false;
             } finally {
                 if (mRealm != null)
@@ -291,10 +288,10 @@ public class MainActivity extends AppCompatActivity
         protected void onProgressUpdate(String... values) {
             if(values != null) { // false면 네트워크 오류
                 String toastMsg = values[0];
-                Toast.makeText(mContext, toastMsg, Toast.LENGTH_LONG);
+                Toast.makeText(getBaseContext(), toastMsg, Toast.LENGTH_LONG);
                 return;
             }
-            View.inflate(mContext, R.layout.activity_main_progress, mContentsLayout);
+            View.inflate(getBaseContext(), R.layout.activity_main_progress, mContentsLayout);
             mViewPager.setVisibility(View.INVISIBLE);
         }
 

@@ -32,6 +32,7 @@ public class Parser {
     private String apiServiceKey;
     private String daeguCityCode;
     private String appServerDomain;
+    private String daeguRouteInfoUrl;
     private ArrayList<RouteArrInfo> routeArrInfoList;
     private OkHttpClient client;
     private Boolean isAppServer;
@@ -44,6 +45,7 @@ public class Parser {
         busStopNoListUrl = mContext.getString(R.string.busstopno_list_url);
         apiServiceKey = mContext.getString(R.string.api_service_key);
         appServerDomain = mContext.getString(R.string.appserver_doamin);
+        daeguRouteInfoUrl = mContext.getString(R.string.daegu_route_info_url);
         client = new OkHttpClient();
         gson = new Gson();
     }
@@ -337,6 +339,7 @@ public class Parser {
             for(int arrInfoIndex = 0; arrInfoIndex < arrInfoElemsSize; arrInfoIndex++) {
                 Element arrInfoElem = arrInfoElems.get(arrInfoIndex);
                 int remainMin = Integer.parseInt( arrInfoElem.getElementsByClass("st").text() );
+
                 String curBusStopName = arrInfoElem.child(1).getElementsByTag("td").text();
 
                 Element secondChild = arrInfoElem.child(2);
@@ -382,7 +385,9 @@ public class Parser {
             Response response = client.newCall(request).execute();
             if (!response.isSuccessful()) throw new IOException("response fail");
 
-            Route route = gson.fromJson(response.body().charStream(), Route.class);
+            mRealm.beginTransaction();
+            Route route = mRealm.createOrUpdateObjectFromJson(Route.class, response.body().byteStream());
+            mRealm.commitTransaction();
             return route;
         }
 
@@ -398,7 +403,8 @@ public class Parser {
         Document doc = Jsoup.connect(url).get();
         Elements routeInfoElems = doc.select("item");
         if (routeInfoElems.isEmpty())
-            return null;
+            return getRouteById(mRealm, mRoute.getId());
+
         Element routeInfoElem = routeInfoElems.get(0);
 
         mRealm.beginTransaction(); // mRoute를 DB에 반영할 때만 사용
@@ -425,6 +431,53 @@ public class Parser {
         mRoute.setUpdatedDetail(new Date());
         mRealm.commitTransaction();
         /* 공공데이터에서 노선상세정보 가져오기 끝 */
+
+        return mRoute;
+    }
+
+    /**
+     *  노선정보가 DB에 없을 때 routeId를 통해 획득
+     *
+     * @param routeId
+     * @return
+     * @throws IOException 네트워크 오류 발생 try-catch로 UI스레드에서 처리요망
+     */
+    public Route getRouteById(Realm mRealm, String routeId) throws IOException {
+        if( isAppServer() ) {
+            String url = appServerDomain + "/routes/" + routeId;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            if (!response.isSuccessful()) throw new IOException("response fail");
+
+            mRealm.beginTransaction();
+            Route route = gson.fromJson(response.body().charStream(), Route.class);
+            mRealm.commitTransaction();
+            return route;
+        }
+
+        String url = daeguRouteInfoUrl;
+
+        Document doc = Jsoup.connect(url).get();
+        Elements routeElem = doc.select(".route_detail .align_left");
+        if(routeElem.isEmpty())
+            return null;
+
+        Route mRoute = new Route();
+        mRoute.setId(routeId);
+        mRoute.setNo( routeElem.get(0).text() );
+        mRoute.setStartBusStopName(routeElem.get(1).text());
+        mRoute.setEndBusStopName(routeElem.get(2).text());
+        String rawInterval = routeElem.get(3).text();
+        if( rawInterval != null )
+            mRoute.setInterval( Integer.parseInt(rawInterval) );
+        mRoute.setUpdatedDetail( new Date() );
+
+        mRealm.beginTransaction();
+        mRealm.copyToRealmOrUpdate(mRoute);
+        mRealm.commitTransaction();
 
         return mRoute;
     }
@@ -535,6 +588,8 @@ public class Parser {
         }
         return busPosInfos;
     }
+
+
 /*
     *//**
      * String 값에 숫자만 들어있는지 확인

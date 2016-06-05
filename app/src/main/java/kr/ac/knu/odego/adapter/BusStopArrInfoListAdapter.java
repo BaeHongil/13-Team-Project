@@ -66,19 +66,33 @@ public class BusStopArrInfoListAdapter extends BaseAdapter {
         viewHolder.favoriteBtn.setImageResource(R.drawable.favorite_off);
         viewHolder.routeNo.setText( routeArrInfo.getMRoute().getNo() );
         viewHolder.routeDirection.setText( routeArrInfo.getMRoute().getDirection() );
+        viewHolder.routeDirection.setSelected(true);
         ArrInfo[] arrInfos = routeArrInfo.getArrInfos();
 
         if( arrInfos[0].getMessage() != null ) {
             viewHolder.remainedMin1.setText("도착정보없음");
+            viewHolder.remainedBusStop1.setVisibility(View.GONE);
+            viewHolder.remainedMin2.setVisibility(View.GONE);
+            viewHolder.remainedBusStop2.setVisibility(View.GONE);
             return itemView;
         }
         if( arrInfos.length == 1 ) {
-            viewHolder.remainedMin1.setText( arrInfos[0].getRemainMin() );
-            viewHolder.remainedBusStop1.setText( arrInfos[0].getRemainBusStopCount() );
+            viewHolder.remainedMin1.setText( String.valueOf(arrInfos[0].getRemainMin()) );
+            viewHolder.remainedBusStop1.setText( String.valueOf(arrInfos[0].getRemainBusStopCount()) );
+
+            viewHolder.remainedBusStop1.setVisibility(View.VISIBLE);
+            viewHolder.remainedMin2.setVisibility(View.GONE);
+            viewHolder.remainedBusStop2.setVisibility(View.GONE);
             return itemView;
         }
-        viewHolder.remainedMin2.setText( arrInfos[1].getRemainMin() );
-        viewHolder.remainedBusStop2.setText( arrInfos[1].getRemainBusStopCount() );
+        viewHolder.remainedMin1.setText( String.valueOf(arrInfos[0].getRemainMin()) );
+        viewHolder.remainedBusStop1.setText( String.valueOf(arrInfos[0].getRemainBusStopCount()) );
+        viewHolder.remainedMin2.setText( String.valueOf(arrInfos[1].getRemainMin()) );
+        viewHolder.remainedBusStop2.setText( String.valueOf(arrInfos[1].getRemainBusStopCount()) );
+
+        viewHolder.remainedBusStop1.setVisibility(View.VISIBLE);
+        viewHolder.remainedMin2.setVisibility(View.VISIBLE);
+        viewHolder.remainedBusStop2.setVisibility(View.VISIBLE);
 
         return itemView;
     }

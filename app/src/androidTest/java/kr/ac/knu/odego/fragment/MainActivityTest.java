@@ -16,6 +16,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import kr.ac.knu.odego.activity.MainActivity;
@@ -108,7 +113,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
         return null;
     }
 
-    @Test
+    @Ignore
     public void getBusPosInfosTest() throws Exception {
         String methodName = getMethodName(Thread.currentThread().getStackTrace());
 
@@ -127,5 +132,29 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
         Log.i(methodName, "시작분" + mRoute.getStartMin());
         Log.i(methodName, "배차간격" + mRoute.getInterval());
         Log.i(methodName, "배차간격(휴일)" + mRoute.getIntervalSun());
+    }
+
+    @Test
+    public void getRoute() throws Exception {
+        Parser mParser = Parser.getInstance();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<Route> future = executor.submit(new Callable<Route>() {
+            @Override
+            public Route call() throws Exception {
+                Parser mParser = Parser.getInstance();
+                Realm mRealm = null;
+                try {
+                    mRealm = Realm.getDefaultInstance();
+                    return mParser.getRouteById(mRealm, "3690003770");
+                } finally {
+                    if( mRealm != null)
+                        mRealm.close();
+                }
+            }
+        });
+        Route mRoute = future.get();
+
+        Log.i("getRouteTest", mRoute.getNo());
     }
 }
