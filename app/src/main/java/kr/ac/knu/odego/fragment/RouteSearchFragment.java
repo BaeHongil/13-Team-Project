@@ -1,6 +1,7 @@
 package kr.ac.knu.odego.fragment;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -16,6 +17,7 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 import kr.ac.knu.odego.R;
+import kr.ac.knu.odego.activity.BusPosInfoActivity;
 import kr.ac.knu.odego.adapter.RouteListAdapter;
 import kr.ac.knu.odego.item.Route;
 
@@ -124,6 +126,10 @@ public class RouteSearchFragment extends Fragment {
     }
 
     public void addRouteHistory(final String routeId) {
+        Intent intent = new Intent( getContext(), BusPosInfoActivity.class);
+        intent.putExtra("routeId", routeId);
+        startActivity(intent);
+
         mRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {

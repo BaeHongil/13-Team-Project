@@ -79,15 +79,15 @@ public class BusStopArrInfoListAdapter extends BaseAdapter {
             viewHolder.favoriteBtn.setChecked(false);
 
         viewHolder.routeNo.setText( mRoute.getNo() );
-        String busType = mRoute.getType();
+        String routeType = mRoute.getType();
         int routeNoColor;
-        if (BusType.MAIN.getName().equals( busType ))
+        if (BusType.MAIN.getName().equals( routeType ))
             routeNoColor = mContext.getResources().getColor(R.color.main_bus);
-        else if (BusType.BRANCH.getName().equals( busType ))
+        else if (BusType.BRANCH.getName().equals( routeType ))
             routeNoColor = mContext.getResources().getColor(R.color.branch_bus);
-        else if (BusType.EXPRESS.getName().equals( busType ))
+        else if (BusType.EXPRESS.getName().equals( routeType ))
             routeNoColor = mContext.getResources().getColor(R.color.express_bus);
-        else if (BusType.CIRCULAR.getName().equals( busType ))
+        else if (BusType.CIRCULAR.getName().equals( routeType ))
             routeNoColor = mContext.getResources().getColor(R.color.circular_bus);
         else
             routeNoColor = mContext.getResources().getColor(R.color.colorPrimaryDark);

@@ -231,8 +231,9 @@ public class Parser {
 
                 String routeTp = routeElem.getElementsByTag("routetp").text();
                 for( BusType busType: BusType.values() ) {
-                    if(busType.getName(true).equals(routeTp)) {
-                        route.setType(busType.name());
+                    String strBusType = busType.getName(true);
+                    if(strBusType.equals(routeTp)) {
+                        route.setType(strBusType);
                         break;
                     }
                 }
@@ -376,14 +377,14 @@ public class Parser {
      * 노선의 상세정보(기점, 종점, 배차간격 등)를 얻습니다.
      * 주로, 버스위치정보 얻을 때 getBusPosInfos()와 함께 사용합니다.
      *
-     * @param mRealm 현재 쓰레드에서 생성한 realm 인스턴스
-     * @param mRoute 업데이트할 노선(Realm에서 copyFromRealm()된 객체만 가능합니다)
+     * @param mRealm  현재 쓰레드에서 생성한 realm 인스턴스
+     * @param routeId 노선ID
      * @return 업데이트한 노선
      * @throws IOException 네트워크 오류 발생 try-catch로 UI스레드에서 처리요망
      */
-    public Route getRouteDetailInfo(Realm mRealm, Route mRoute) throws IOException {
+    public Route getRouteDetailInfo(Realm mRealm, String routeId) throws IOException {
         if( isAppServer() ) {
-            String url = appServerDomain + "/routes/" + mRoute.getId() + "detailinfo";
+            String url = appServerDomain + "/routes/" + routeId + "/detailinfo";
             Request request = new Request.Builder()
                     .url(url)
                     .build();
@@ -392,9 +393,9 @@ public class Parser {
             if (!response.isSuccessful()) throw new IOException("response fail");
 
             mRealm.beginTransaction();
-            Route route = mRealm.createOrUpdateObjectFromJson(Route.class, response.body().byteStream());
+            Route mRoute = mRealm.createOrUpdateObjectFromJson(Route.class, response.body().byteStream());
             mRealm.commitTransaction();
-            return route;
+            return mRoute;
         }
 
         String url = openapiDomain +
@@ -403,16 +404,17 @@ public class Parser {
                 "&numOfRows=9999" + // 검색건수
                 "&pageNo=1" + // 페이지 번호
                 "&cityCode=" + getDaeguCityCode() + // 대구도시코드
-                "&routeId=DGB" + mRoute.getId();
+                "&routeId=DGB" + routeId;
 
          /* 공공데이터에서 노선상세정보 가져오기 시작 */
         Document doc = Jsoup.connect(url).get();
         Elements routeInfoElems = doc.select("item");
         if (routeInfoElems.isEmpty())
-            return getRouteById(mRealm, mRoute.getId());
+            return getRouteById(mRealm, routeId);
 
         Element routeInfoElem = routeInfoElems.get(0);
 
+        Route mRoute = mRealm.where(Route.class).equalTo("id", routeId).findFirst();
         mRealm.beginTransaction(); // mRoute를 DB에 반영할 때만 사용
         mRoute.setStartBusStopName(routeInfoElem.getElementsByTag("startnodenm").text());
         mRoute.setEndBusStopName(routeInfoElem.getElementsByTag("endnodenm").text());
@@ -493,13 +495,12 @@ public class Parser {
      * 특정 노선의 모든 버스위치정보를 얻습니다.
      * 기존의 버스위치정보가 있을 경우 updateBusPosInfos() 메소드를 사용하세요.
      *
-     * @param mRealm    현재 쓰레드에서 생성한 realm 인스턴스
      * @param routeId   검색할 노선 ID
      * @param isForward 정방향이면 true(1), 역방향이면 false(0)
      * @return 생성된 버스위치정보 배열
      * @throws IOException 네트워크 오류 발생 try-catch로 UI스레드에서 처리요망
      */
-    public BusPosInfo[] getBusPosInfos(Realm mRealm, String routeId, boolean isForward) throws IOException {
+    public BusPosInfo[] getBusPosInfos(String routeId, boolean isForward) throws IOException {
         if( isAppServer() ) {
             String url = appServerDomain + "/routes/" + routeId + "/busposinfos" + "?isforward="+ isForward;
             Request request = new Request.Builder()
@@ -527,14 +528,21 @@ public class Parser {
         Elements busStopElems = listElems.select("span.pl39");
         int busStopElemsSize = busStopElems.size();
         busPosInfos = new BusPosInfo[busStopElemsSize];
-        for (int busPosInfoIndex = 0; busPosInfoIndex < busStopElemsSize; busPosInfoIndex++) {
-            Element busStopElem = busStopElems.get( busPosInfoIndex );
-            String rawBusStopName = busStopElem.select(".pl39").text();
-            int startOffset = rawBusStopName.indexOf(". ");
-            String busStopName = rawBusStopName.substring(startOffset + 2);
+        Realm mRealm = null;
+        try {
+            mRealm = Realm.getDefaultInstance();
+            for (int busPosInfoIndex = 0; busPosInfoIndex < busStopElemsSize; busPosInfoIndex++) {
+                Element busStopElem = busStopElems.get( busPosInfoIndex );
+                String rawBusStopName = busStopElem.select(".pl39").text();
+                int startOffset = rawBusStopName.indexOf(". ");
+                String busStopName = rawBusStopName.substring(startOffset + 2);
 
-            BusStop mBusStop = mRealm.where(BusStop.class).equalTo("name", busStopName).findFirst();
-            busPosInfos[busPosInfoIndex] = new BusPosInfo(mBusStop.getId());
+                BusStop mBusStop = mRealm.where(BusStop.class).equalTo("name", busStopName).findFirst();
+                busPosInfos[busPosInfoIndex] = new BusPosInfo(mBusStop.getId());
+            }
+        } finally {
+            if (mRealm != null)
+                mRealm.close();
         }
 
         // 버스위치정보 저장
@@ -596,6 +604,12 @@ public class Parser {
         return busPosInfos;
     }
 
+    public Boolean isToday(Date date) {
+        Date today = new Date();
+        return !( today.getYear() > date.getYear()
+                || today.getMonth() > date.getMonth()
+                || today.getDate() > date.getDate() );
+    }
 
 /*
     *//**

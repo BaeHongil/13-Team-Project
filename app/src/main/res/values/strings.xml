@@ -28,4 +28,6 @@
     <string name="no_result">검색결과가 없습니다</string>
 
     <string name="beacon_uuid">24DDF411-8CF1-440C-87CD-E368DAF9C9DE</string>
+
+    <string name="refresh_arrinfo_data">도착정보를 새로고침합니다</string>
 </resources>

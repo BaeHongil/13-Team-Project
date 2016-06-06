@@ -119,7 +119,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
 
         Route routeRealm = mRealm.where(Route.class).equalTo("id", "3000306000").findFirst();
         Route mRoute = mRealm.copyFromRealm(routeRealm);
-        BusPosInfo[] busPosInfos = mParser.getBusPosInfos(mRealm, mRoute.getId(), true);
+        BusPosInfo[] busPosInfos = mParser.getBusPosInfos(mRoute.getId(), true);
         busPosInfos = mParser.updateBusPosInfos(mRoute.getId(), true, busPosInfos);
         for( BusPosInfo mBusPosInfo : busPosInfos) {
             Log.i(methodName, mBusPosInfo.getMBusStop().getName());
@@ -127,7 +127,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
                 Log.i(methodName, (mBusPosInfo.isNonStepBus() ? "저상":"") + mBusPosInfo.getBusId());
         }
 
-        mParser.getRouteDetailInfo(mRealm, mRoute);
+        mParser.getRouteDetailInfo(mRealm, mRoute.getId());
         Log.i(methodName, "시작시간" + mRoute.getStartHour());
         Log.i(methodName, "시작분" + mRoute.getStartMin());
         Log.i(methodName, "배차간격" + mRoute.getInterval());

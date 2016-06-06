@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/header"
+    android:background="@color/main_bus">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/busposinfo_header_height"
+        android:gravity="center_vertical"
+        android:id="@+id/header_contents">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="route Type"
+            android:id="@+id/route_type"
+            android:layout_gravity="left|center_horizontal"
+            android:textColor="#FFFFFF"
+            android:layout_marginLeft="15dp"
+            android:gravity="bottom"
+            android:textSize="@dimen/default_text_size" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:gravity="bottom">
+
+            <TextView
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:textSize="35dp"
+                android:text="101"
+                android:id="@+id/route_no"
+                android:textColor="#FFFFFF"
+                android:layout_marginLeft="15dp"
+                android:gravity="bottom" />
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:text="파계사 ~ 어디까지"
+                    android:id="@+id/total_route"
+                    android:textIsSelectable="true"
+                    android:textSize="@dimen/default_text_size" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:text="05:30 ~22:00"
+                    android:id="@+id/total_route_time"
+                    android:textSize="@dimen/default_text_size" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:textSize="20dp"
+                android:text="배차간격"
+                android:layout_gravity="left|center_horizontal"
+                android:textColor="#FFFFFF"
+                android:layout_marginLeft="15dp"
+                android:gravity="fill_horizontal|center_vertical" />
+
+            <TextView
+                android:layout_width="250dp"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="평일 15분 / 주말 20분"
+                android:id="@+id/interval"
+                android:textColor="#FFFFFF"
+                android:autoText="false"
+                android:textSize="@dimen/default_text_size" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

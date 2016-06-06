@@ -1,53 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
     android:background="#ffffff">
 
+    <ToggleButton
+        android:layout_width="@dimen/favorite_btn_size"
+        android:layout_height="@dimen/favorite_btn_size"
+        android:id="@+id/favorite_btn"
+        android:textOff=""
+        android:textOn=""
+        android:background="@drawable/favorite_btn"
+        android:layout_margin="5dp"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:allowUndo="false"
+        android:layout_gravity="center_vertical" />
+
     <LinearLayout
         android:orientation="vertical"
-        android:layout_width="240dp"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:gravity="left|center_vertical">
+        android:gravity="left|center_vertical"
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@+id/favorite_btn"
+        android:layout_marginLeft="8dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="bus_number"
-            android:id="@+id/route_name"
+            android:text="busstop_name"
+            android:id="@+id/busstop_name"
             android:layout_gravity="left"
-            android:layout_marginLeft="10dp"
             android:textColor="#000000" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="bus_direction(next)"
-            android:id="@+id/bus_direction"
-            android:layout_gravity="left"
-            android:layout_marginLeft="10dp" />
+            android:text="busstop_no"
+            android:id="@+id/busstop_no"
+            android:layout_gravity="left" />
 
     </LinearLayout>
 
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/imageView"
+        android:id="@+id/bus_icon"
         android:layout_gravity="center_vertical|right"
-        android:layout_margin="0dp"
-        android:src="@drawable/busposinfo_bus_on" />
+        android:layout_marginLeft="0dp"
+        android:layout_marginRight="0dp"
+        android:layout_centerVertical="true"
+        android:layout_toStartOf="@+id/bus_id" />
 
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="47dp"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="8672"
-        android:id="@+id/bus_unum"
+        android:id="@+id/bus_id"
         android:layout_gravity="left|center_vertical"
         android:background="#E46C0A"
-        android:gravity="left|center_vertical" />
+        android:gravity="left|center_vertical"
+        android:ems="4"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true" />
 
-</LinearLayout>
+</RelativeLayout>

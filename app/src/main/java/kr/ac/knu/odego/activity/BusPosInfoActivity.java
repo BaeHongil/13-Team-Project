@@ -18,75 +18,91 @@ import com.github.ksoichiro.android.observablescrollview.ScrollState;
 import com.github.ksoichiro.android.observablescrollview.ScrollUtils;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
 import kr.ac.knu.odego.R;
-import kr.ac.knu.odego.adapter.BusStopArrInfoListAdapter;
+import kr.ac.knu.odego.adapter.BusPosInfoListAdapter;
+import kr.ac.knu.odego.common.BusType;
 import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.common.RealmTransaction;
+import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Favorite;
 import kr.ac.knu.odego.item.Route;
-import kr.ac.knu.odego.item.RouteArrInfo;
 
-public class BusStopArrInfoActivity extends ObsvBaseActivity {
+public class BusPosInfoActivity extends ObsvBaseActivity {
 
     private View mHeaderView;
     private View HeaderContentsView;
     private Toolbar mToolbarView;
     private View mListBackgroundView;
     private ObservableListView mListView;
-    private BusStopArrInfoListAdapter mListAdapter;
+    private BusPosInfoListAdapter mListAdapter;
     private int headerHeight;
 
+    private Parser mParser = Parser.getInstance();
     private Realm mRealm;
     private RealmResults<Favorite> favoriteRealmResults;
-    private BusStop mBusStop;
-    private String busStopId;
-    private Route[] routes;
+    private Route mRoute;
+    private String routeId = "3000306000";
+    private BusStop[] busStops;
 
     private int themeColor;
+    private boolean isForward = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_busstoparrinfo) ;
+        setContentView(R.layout.activity_busposinfo);
 
-        themeColor = getResources().getColor(R.color.busstop_arrinfo_header);
-        if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
-            getWindow().setStatusBarColor(themeColor);
 
         mRealm = Realm.getDefaultInstance();
+        routeId = getIntent().getExtras().getString("routeId");
+        mRoute = mRealm.where(Route.class).equalTo("id", routeId).findFirst();
+
         mListView = (ObservableListView) findViewById(R.id.list);
         mListView.setScrollViewCallbacks(this);
-        mListAdapter = new BusStopArrInfoListAdapter(this, mRealm);
+
+        mListAdapter = new BusPosInfoListAdapter(this, mRealm, mRoute.getType());
         mListView.setAdapter(mListAdapter);
-        headerHeight = getResources().getDimensionPixelSize(R.dimen.busstoparrinfo_header_height);
+        headerHeight = getResources().getDimensionPixelSize(R.dimen.busposinfo_header_height);
         setPaddingView(mListView, headerHeight);
 
         // 도착정보 얻기
-        busStopId = getIntent().getExtras().getString("busStopId");
-        GetBusStopArrinfoAsyncTask getBusStopArrinfoAsyncTask = new GetBusStopArrinfoAsyncTask();
-        getBusStopArrinfoAsyncTask.execute();
-        mBusStop = mRealm.where(BusStop.class).equalTo("id", busStopId).findFirst();
-        favoriteRealmResults = mRealm.where(Favorite.class).equalTo("mBusStop.id", busStopId).findAll(); // 버스정류장 즐겨찾기 여부
+        GetBusPosInfoAsyncTask getBusPosinfoAsyncTask = new GetBusPosInfoAsyncTask();
+        getBusPosinfoAsyncTask.execute(isForward);
+        favoriteRealmResults = mRealm.where(Favorite.class).equalTo("mRoute.id", routeId).findAll(); // 버스정류장 즐겨찾기 여부
 
-        // 헤더의 정류장 정보 등록
         mHeaderView = findViewById(R.id.header);
         HeaderContentsView = mHeaderView.findViewById(R.id.header_contents);
-        TextView headerBusStopNo = (TextView) HeaderContentsView.findViewById(R.id.busstop_no);
-        TextView headerBusStopName = (TextView) HeaderContentsView.findViewById(R.id.busstop_name);
-        headerBusStopNo.setText(mBusStop.getNo());
-        headerBusStopName.setText(mBusStop.getName());
+        // 현재 노선상세정보 있는지 확인후 노선정보 등록
+        if( mRoute.getUpdatedDetail() != null && Parser.getInstance().isToday( mRoute.getUpdatedDetail() ) )
+            setHeaderDate();
+        else {
+            GetRouteDetailInfoAsyncTask getRouteDetailInfoAsyncTask = new GetRouteDetailInfoAsyncTask();
+            getRouteDetailInfoAsyncTask.execute();
+        }
+
+        // 테마색상 노선유형에 따라 설정
+        String routeType = mRoute.getType();
+        if (BusType.MAIN.getName().equals( routeType ))
+            themeColor = getResources().getColor(R.color.main_bus);
+        else if (BusType.BRANCH.getName().equals( routeType ))
+            themeColor = getResources().getColor(R.color.branch_bus);
+        else if (BusType.EXPRESS.getName().equals( routeType ))
+            themeColor = getResources().getColor(R.color.express_bus);
+        else if (BusType.CIRCULAR.getName().equals( routeType ))
+            themeColor = getResources().getColor(R.color.circular_bus);
+        else
+            themeColor = getResources().getColor(R.color.colorPrimary);
+
+        if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
+            getWindow().setStatusBarColor(themeColor);
+        mHeaderView.setBackgroundColor(themeColor);
 
         mToolbarView = (Toolbar)findViewById(R.id.toolbar);
-        mToolbarView.setTitle(mBusStop.getName());
+        mToolbarView.setTitle(mRoute.getNo());
         //mToolbarView.setSubtitle("서브타이틀");
         // 툴바 색상 설정
         mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, themeColor));
@@ -99,8 +115,8 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
         refreshBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                GetBusStopArrinfoAsyncTask getBusStopArrinfoAsyncTask = new GetBusStopArrinfoAsyncTask();
-                getBusStopArrinfoAsyncTask.execute();
+                GetBusPosInfoAsyncTask getBusPosinfoAsyncTask = new GetBusPosInfoAsyncTask();
+                getBusPosinfoAsyncTask.execute(isForward);
 
                 Snackbar.make(view, getString(R.string.refresh_arrinfo_data), Snackbar.LENGTH_SHORT)
                         .setAction("Action", null).show();
@@ -109,6 +125,25 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
 
         // mListBackgroundView makes ListView's background except header view.
         mListBackgroundView = findViewById(R.id.list_background);
+    }
+
+    private void setHeaderDate() {
+        TextView headerRouteType = (TextView) HeaderContentsView.findViewById(R.id.route_type);
+        TextView headerRouteNo = (TextView) HeaderContentsView.findViewById(R.id.route_no);
+        TextView headerTotalRoute = (TextView) HeaderContentsView.findViewById(R.id.total_route);
+        TextView headerTotalRouteTime = (TextView) HeaderContentsView.findViewById(R.id.total_route_time);
+        TextView headerInterval = (TextView) HeaderContentsView.findViewById(R.id.interval);
+        headerRouteType.setText(mRoute.getType());
+        headerRouteNo.setText(mRoute.getNo());
+        headerTotalRoute.setText(mRoute.getStartBusStopName() + " ↔ " + mRoute.getEndBusStopName());
+        headerTotalRouteTime.setText(
+                String.format("%02d:%02d ~ %02d:%02d",
+                        mRoute.getStartHour(), mRoute.getStartMin(), mRoute.getEndHour(), mRoute.getEndMin()
+                ));
+        headerInterval.setText(
+                String.format("평일 %02d분 / 주말 %02d분",
+                        mRoute.getInterval(), mRoute.getIntervalSun())
+        );
     }
 
     @Override
@@ -147,10 +182,10 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
                 item.setChecked(isChecked);
                 if( isChecked ) {
                     item.setIcon(R.drawable.favorite_on);
-                    RealmTransaction.createBusStopFavorite(mRealm, busStopId);
+                    RealmTransaction.createRouteFavorite(mRealm, routeId);
                 } else {
                     item.setIcon(R.drawable.favorite_off);
-                    RealmTransaction.deleteBusStopFavorite(mRealm, busStopId);
+                    RealmTransaction.deleteRouteFavorite(mRealm, routeId);
                 }
 
                 return true;
@@ -194,15 +229,45 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
     public void onUpOrCancelMotionEvent(ScrollState scrollState) {
     }
 
-    private class GetBusStopArrinfoAsyncTask extends AsyncTask<Void, String, RouteArrInfo[]> {
+    private class GetRouteDetailInfoAsyncTask extends AsyncTask<Void, String, Route> {
 
         @Override
-        protected RouteArrInfo[] doInBackground(Void... params) {
-            Parser mParser = Parser.getInstance();
+        protected Route doInBackground(Void... params) {
+            Realm mRealm = null;
             try {
-                RouteArrInfo[] routeArrInfos = mParser.getBusStopArrInfos(busStopId);
+                mRealm = Realm.getDefaultInstance();
+                mParser.getRouteDetailInfo(mRealm, routeId);
+            } catch (IOException e) {
+                publishProgress( getString(R.string.network_error_msg) );
+            } finally {
+                if(mRealm != null)
+                    mRealm.close();
+            }
 
-                return routeArrInfos;
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            Toast.makeText(getBaseContext(), values[0], Toast.LENGTH_LONG);
+        }
+
+        @Override
+        protected void onPostExecute(Route route) {
+            setHeaderDate();
+        }
+    }
+
+
+    private class GetBusPosInfoAsyncTask extends AsyncTask<Boolean, String, BusPosInfo[]> {
+
+        @Override
+        protected BusPosInfo[] doInBackground(Boolean... params) {
+            boolean isForward = params[0];
+            try {
+                BusPosInfo[] busPosInfos = mParser.getBusPosInfos(routeId, isForward);
+
+                return busPosInfos;
             } catch (IOException e) {
                 publishProgress( getString(R.string.network_error_msg) );
             }
@@ -216,50 +281,26 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
         }
 
         @Override
-        protected void onPostExecute(RouteArrInfo[] routeArrInfos) {
-            if( routeArrInfos == null )
+        protected void onPostExecute(BusPosInfo[] busPosInfos) {
+            if( busPosInfos == null )
                 return;
 
-            if( routes == null ) { // 버스정류장의 노선들 정보가 없을 때
-                routes = new Route[routeArrInfos.length];
-                for (int i = 0; i < routeArrInfos.length; i++) {
-                    RouteArrInfo routeArrInfo = routeArrInfos[i];
-                    final String routeId = routeArrInfo.getRouteId();
-                    Route mRoute = mRealm.where(Route.class).equalTo("id", routeId).findFirst();
-                    if( mRoute == null ) { // 노선정보가 DB에 없을 때... 대구버스홈페이지에서 파싱해서 들고옴
-                        ExecutorService executor = Executors.newSingleThreadExecutor();
-                        Future<Route> future = executor.submit(new Callable<Route>() {
-                            @Override
-                            public Route call() throws Exception {
-                                Parser mParser = Parser.getInstance();
-                                Realm mRealm = null;
-                                try {
-                                    mRealm = Realm.getDefaultInstance();
-                                    return mParser.getRouteById(mRealm, routeId);
-                                } finally {
-                                    if( mRealm != null)
-                                        mRealm.close();
-                                }
-                            }
-                        });
-                        try {
-                            mRoute = future.get();
-                        } catch (InterruptedException e) {
-                            Toast.makeText(getBaseContext(), getString(R.string.network_error_msg), Toast.LENGTH_LONG).show();
-                        } catch (ExecutionException e) {
-                            Toast.makeText(getBaseContext(), getString(R.string.other_err_msg), Toast.LENGTH_LONG).show();
-                        }
-                    }
+            if( busStops == null ) { // 버스정류장의 노선들 정보가 없을 때
+                busStops = new BusStop[busPosInfos.length];
+                for (int i = 0; i < busPosInfos.length; i++) {
+                    BusPosInfo busPosInfo = busPosInfos[i];
+                    String busStopId = busPosInfo.getBusStopId();
+                    BusStop mBusStop = mRealm.where(BusStop.class).equalTo("id", busStopId).findFirst();
 
-                    routes[i] = mRoute;
-                    routeArrInfo.setMRoute(mRoute);
+                    busStops[i] = mBusStop;
+                    busPosInfo.setMBusStop(mBusStop);
                 }
             } else {
-                for (int i = 0; i < routeArrInfos.length; i++)
-                    routeArrInfos[i].setMRoute(routes[i]);
+                for (int i = 0; i < busPosInfos.length; i++)
+                    busPosInfos[i].setMBusStop(busStops[i]);
             }
 
-            mListAdapter.setRouteArrInfos(routeArrInfos);
+            mListAdapter.setBusPosInfos(busPosInfos);
             mListAdapter.notifyDataSetChanged();
         }
     }

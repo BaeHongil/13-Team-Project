@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity
         tabLayout.setupWithViewPager(mViewPager);
 
         // 플로팅액션버튼 설정
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.refresh);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
