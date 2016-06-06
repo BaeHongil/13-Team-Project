@@ -6,8 +6,9 @@ import android.view.ViewGroup;
 import io.realm.OrderedRealmCollection;
 import io.realm.RealmRecyclerViewAdapter;
 import kr.ac.knu.odego.R;
-import kr.ac.knu.odego.item.Route;
+import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.fragment.RouteSearchFragment;
+import kr.ac.knu.odego.item.Route;
 
 /**
  * Created by BHI on 2016-05-14.
@@ -50,7 +51,17 @@ public class RouteListAdapter extends RealmRecyclerViewAdapter<Route, RouteListA
     public void onBindViewHolder(RouteViewHolder holder, int position) {
         Route mRoute = getData().get(position);
         holder.data = mRoute;
-        holder.mItemIcon.setImageResource(ROUTE_ICON);
+
+        String routeType = mRoute.getType();
+        if (RouteType.MAIN.getName().equals( routeType ))
+            holder.mItemIcon.setImageResource(R.drawable.bus_main);
+        else if (RouteType.BRANCH.getName().equals( routeType ))
+            holder.mItemIcon.setImageResource(R.drawable.bus_branch);
+        else if (RouteType.EXPRESS.getName().equals( routeType ))
+            holder.mItemIcon.setImageResource(R.drawable.bus_express);
+        else if (RouteType.CIRCULAR.getName().equals( routeType ))
+            holder.mItemIcon.setImageResource(R.drawable.bus_circular);
+
         holder.mItemName.setText(mRoute.getNo());
         holder.mItemDetail.setText(mRoute.getDirection());
     }

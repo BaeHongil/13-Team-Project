@@ -7,6 +7,8 @@ import com.facebook.stetho.Stetho;
 import com.facebook.stetho.okhttp3.StethoInterceptor;
 import com.uphyca.stetho_realm.RealmInspectorModulesProvider;
 
+import java.util.Date;
+
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import okhttp3.OkHttpClient;
@@ -67,4 +69,13 @@ public class OdegoApplication extends Application {
         }
         return null;
     }
+
+    public static Boolean isToday(Date date) {
+        Date today = new Date();
+        return !( today.getYear() > date.getYear()
+                || today.getMonth() > date.getMonth()
+                || today.getDate() > date.getDate() );
+    }
+
+
 }

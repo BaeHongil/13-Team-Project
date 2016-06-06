@@ -230,8 +230,8 @@ public class Parser {
                     route.setNo( routeNo );
 
                 String routeTp = routeElem.getElementsByTag("routetp").text();
-                for( BusType busType: BusType.values() ) {
-                    String strBusType = busType.getName(true);
+                for( RouteType routeType : RouteType.values() ) {
+                    String strBusType = routeType.getName(true);
                     if(strBusType.equals(routeTp)) {
                         route.setType(strBusType);
                         break;
@@ -602,13 +602,6 @@ public class Parser {
             }
         }
         return busPosInfos;
-    }
-
-    public Boolean isToday(Date date) {
-        Date today = new Date();
-        return !( today.getYear() > date.getYear()
-                || today.getMonth() > date.getMonth()
-                || today.getDate() > date.getDate() );
     }
 
 /*

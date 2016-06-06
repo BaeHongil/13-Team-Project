@@ -11,7 +11,7 @@ import android.widget.ToggleButton;
 
 import io.realm.Realm;
 import kr.ac.knu.odego.R;
-import kr.ac.knu.odego.common.BusType;
+import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
@@ -23,26 +23,24 @@ import kr.ac.knu.odego.item.Favorite;
 public class BusPosInfoListAdapter extends BaseAdapter {
     private Context mContext;
     private Realm mRealm;
-    private String busType;
     private BusPosInfo[] busPosInfos;
     private LayoutInflater inflater;
     private int busOffImg, busOnImg, busOnNsImg;
 
-    public BusPosInfoListAdapter(Context mContext, Realm mRealm, String busType) {
+    public BusPosInfoListAdapter(Context mContext, Realm mRealm, String routeType) {
         this.mContext = mContext;
         this.mRealm = mRealm;
-        this.busType = busType;
 
         inflater = LayoutInflater.from(mContext);
-        if( busType.equals( BusType.MAIN.getName() ) ) {
+        if( routeType.equals( RouteType.MAIN.getName() ) ) {
             busOffImg = R.drawable.busposinfo_main_bus_off;
             busOnImg = R.drawable.busposinfo_main_bus_on;
             busOnNsImg = R.drawable.busposinfo_main_bus_on_nonstep;
-        } else if( busType.equals( BusType.BRANCH.getName() ) ) {
+        } else if( routeType.equals( RouteType.BRANCH.getName() ) ) {
             busOffImg = R.drawable.busposinfo_branch_bus_off;
             busOnImg = R.drawable.busposinfo_branch_bus_on;
             busOnNsImg = R.drawable.busposinfo_branch_bus_on_nonstep;
-        } else if( busType.equals( BusType.CIRCULAR.getName() ) ) {
+        } else if( routeType.equals( RouteType.CIRCULAR.getName() ) ) {
             busOffImg = R.drawable.busposinfo_circular_bus_off;
             busOnImg = R.drawable.busposinfo_circular_bus_on;
             busOnNsImg = R.drawable.busposinfo_circular_bus_on_nonstep;

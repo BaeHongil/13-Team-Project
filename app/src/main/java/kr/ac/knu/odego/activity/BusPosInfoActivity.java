@@ -21,9 +21,10 @@ import java.io.IOException;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
+import kr.ac.knu.odego.OdegoApplication;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.BusPosInfoListAdapter;
-import kr.ac.knu.odego.common.BusType;
+import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.item.BusPosInfo;
@@ -77,7 +78,7 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         mHeaderView = findViewById(R.id.header);
         HeaderContentsView = mHeaderView.findViewById(R.id.header_contents);
         // 현재 노선상세정보 있는지 확인후 노선정보 등록
-        if( mRoute.getUpdatedDetail() != null && Parser.getInstance().isToday( mRoute.getUpdatedDetail() ) )
+        if( mRoute.getUpdatedDetail() != null && OdegoApplication.isToday( mRoute.getUpdatedDetail() ) )
             setHeaderDate();
         else {
             GetRouteDetailInfoAsyncTask getRouteDetailInfoAsyncTask = new GetRouteDetailInfoAsyncTask();
@@ -86,16 +87,14 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
 
         // 테마색상 노선유형에 따라 설정
         String routeType = mRoute.getType();
-        if (BusType.MAIN.getName().equals( routeType ))
+        if (RouteType.MAIN.getName().equals( routeType ))
             themeColor = getResources().getColor(R.color.main_bus);
-        else if (BusType.BRANCH.getName().equals( routeType ))
+        else if (RouteType.BRANCH.getName().equals( routeType ))
             themeColor = getResources().getColor(R.color.branch_bus);
-        else if (BusType.EXPRESS.getName().equals( routeType ))
+        else if (RouteType.EXPRESS.getName().equals( routeType ))
             themeColor = getResources().getColor(R.color.express_bus);
-        else if (BusType.CIRCULAR.getName().equals( routeType ))
+        else if (RouteType.CIRCULAR.getName().equals( routeType ))
             themeColor = getResources().getColor(R.color.circular_bus);
-        else
-            themeColor = getResources().getColor(R.color.colorPrimary);
 
         if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
             getWindow().setStatusBarColor(themeColor);
@@ -118,7 +117,7 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
                 GetBusPosInfoAsyncTask getBusPosinfoAsyncTask = new GetBusPosInfoAsyncTask();
                 getBusPosinfoAsyncTask.execute(isForward);
 
-                Snackbar.make(view, getString(R.string.refresh_arrinfo_data), Snackbar.LENGTH_SHORT)
+                Snackbar.make(view, getString(R.string.refresh_busposinfo_data), Snackbar.LENGTH_SHORT)
                         .setAction("Action", null).show();
             }
         });

@@ -5,7 +5,7 @@ import java.util.Date;
 import io.realm.RealmObject;
 import io.realm.annotations.Index;
 import io.realm.annotations.PrimaryKey;
-import kr.ac.knu.odego.common.BusType;
+import kr.ac.knu.odego.common.RouteType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -35,11 +35,11 @@ public class Route extends RealmObject {
     @Index
     private int historyIndex; // 최근기록
 
-    public void setEnumBusType(BusType busType) {
-        setType( busType.name() );
+    public void setEnumBusType(RouteType routeType) {
+        setType( routeType.name() );
     }
 
-    public BusType getEnumBusType() {
-        return BusType.valueOf(type);
+    public RouteType getEnumBusType() {
+        return RouteType.valueOf(type);
     }
 }

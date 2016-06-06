@@ -10,7 +10,7 @@ import android.widget.ToggleButton;
 
 import io.realm.Realm;
 import kr.ac.knu.odego.R;
-import kr.ac.knu.odego.common.BusType;
+import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.item.ArrInfo;
 import kr.ac.knu.odego.item.Favorite;
@@ -81,13 +81,13 @@ public class BusStopArrInfoListAdapter extends BaseAdapter {
         viewHolder.routeNo.setText( mRoute.getNo() );
         String routeType = mRoute.getType();
         int routeNoColor;
-        if (BusType.MAIN.getName().equals( routeType ))
+        if (RouteType.MAIN.getName().equals( routeType ))
             routeNoColor = mContext.getResources().getColor(R.color.main_bus);
-        else if (BusType.BRANCH.getName().equals( routeType ))
+        else if (RouteType.BRANCH.getName().equals( routeType ))
             routeNoColor = mContext.getResources().getColor(R.color.branch_bus);
-        else if (BusType.EXPRESS.getName().equals( routeType ))
+        else if (RouteType.EXPRESS.getName().equals( routeType ))
             routeNoColor = mContext.getResources().getColor(R.color.express_bus);
-        else if (BusType.CIRCULAR.getName().equals( routeType ))
+        else if (RouteType.CIRCULAR.getName().equals( routeType ))
             routeNoColor = mContext.getResources().getColor(R.color.circular_bus);
         else
             routeNoColor = mContext.getResources().getColor(R.color.colorPrimaryDark);
