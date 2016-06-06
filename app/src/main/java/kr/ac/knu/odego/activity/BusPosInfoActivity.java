@@ -6,10 +6,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,6 +51,8 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
     private Route mRoute;
     private String routeId = "3000306000";
     private BusStop[] busStops;
+
+    private Switch swc;
 
     private int themeColor;
     private boolean isForward = true;
@@ -88,13 +93,13 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         // 테마색상 노선유형에 따라 설정
         String routeType = mRoute.getType();
         if (RouteType.MAIN.getName().equals( routeType ))
-            themeColor = getResources().getColor(R.color.main_bus);
+            themeColor = ContextCompat.getColor(this, R.color.main_bus);
         else if (RouteType.BRANCH.getName().equals( routeType ))
-            themeColor = getResources().getColor(R.color.branch_bus);
+            themeColor = ContextCompat.getColor(this, R.color.branch_bus);
         else if (RouteType.EXPRESS.getName().equals( routeType ))
-            themeColor = getResources().getColor(R.color.express_bus);
+            themeColor = ContextCompat.getColor(this, R.color.express_bus);
         else if (RouteType.CIRCULAR.getName().equals( routeType ))
-            themeColor = getResources().getColor(R.color.circular_bus);
+            themeColor = ContextCompat.getColor(this, R.color.circular_bus);
 
         if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
             getWindow().setStatusBarColor(themeColor);
@@ -130,11 +135,12 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         TextView headerRouteType = (TextView) HeaderContentsView.findViewById(R.id.route_type);
         TextView headerRouteNo = (TextView) HeaderContentsView.findViewById(R.id.route_no);
         TextView headerTotalRoute = (TextView) HeaderContentsView.findViewById(R.id.total_route);
+        headerTotalRoute.setSelected(true);
         TextView headerTotalRouteTime = (TextView) HeaderContentsView.findViewById(R.id.total_route_time);
         TextView headerInterval = (TextView) HeaderContentsView.findViewById(R.id.interval);
         headerRouteType.setText(mRoute.getType());
         headerRouteNo.setText(mRoute.getNo());
-        headerTotalRoute.setText(mRoute.getStartBusStopName() + " ↔ " + mRoute.getEndBusStopName());
+        headerTotalRoute.setText(mRoute.getStartBusStopName() + " <--> " + mRoute.getEndBusStopName());
         headerTotalRouteTime.setText(
                 String.format("%02d:%02d ~ %02d:%02d",
                         mRoute.getStartHour(), mRoute.getStartMin(), mRoute.getEndHour(), mRoute.getEndMin()
@@ -143,7 +149,26 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
                 String.format("평일 %02d분 / 주말 %02d분",
                         mRoute.getInterval(), mRoute.getIntervalSun())
         );
+
+        swc = (Switch)findViewById(R.id.switch1);
+
+        swc.setOnCheckedChangeListener(new Switch.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton cb, boolean isChecking) {
+                String str = String.valueOf(isChecking); // boolean -> String 변환
+                // 정방향 역방향
+                if(isChecking)
+                    Toast.makeText(getApplication(), "정방향이래", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(getApplication(), "역방향이래", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        swc.setFocusable(false);
+
+
+
     }
+
 
     @Override
     protected void onDestroy() {
@@ -301,6 +326,8 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
 
             mListAdapter.setBusPosInfos(busPosInfos);
             mListAdapter.notifyDataSetChanged();
+
+
         }
     }
 }

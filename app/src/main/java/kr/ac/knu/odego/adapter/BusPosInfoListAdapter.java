@@ -1,6 +1,8 @@
 package kr.ac.knu.odego.adapter;
 
 import android.content.Context;
+import android.content.Intent;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,8 +13,9 @@ import android.widget.ToggleButton;
 
 import io.realm.Realm;
 import kr.ac.knu.odego.R;
-import kr.ac.knu.odego.common.RouteType;
+import kr.ac.knu.odego.activity.BusStopArrInfoActivity;
 import kr.ac.knu.odego.common.RealmTransaction;
+import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Favorite;
@@ -26,6 +29,7 @@ public class BusPosInfoListAdapter extends BaseAdapter {
     private BusPosInfo[] busPosInfos;
     private LayoutInflater inflater;
     private int busOffImg, busOnImg, busOnNsImg;
+    private int budIdBackgroundColor;
 
     public BusPosInfoListAdapter(Context mContext, Realm mRealm, String routeType) {
         this.mContext = mContext;
@@ -36,18 +40,22 @@ public class BusPosInfoListAdapter extends BaseAdapter {
             busOffImg = R.drawable.busposinfo_main_bus_off;
             busOnImg = R.drawable.busposinfo_main_bus_on;
             busOnNsImg = R.drawable.busposinfo_main_bus_on_nonstep;
+            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.main_bus_dark);
         } else if( routeType.equals( RouteType.BRANCH.getName() ) ) {
             busOffImg = R.drawable.busposinfo_branch_bus_off;
             busOnImg = R.drawable.busposinfo_branch_bus_on;
             busOnNsImg = R.drawable.busposinfo_branch_bus_on_nonstep;
+            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.branch_bus_dark);
         } else if( routeType.equals( RouteType.CIRCULAR.getName() ) ) {
             busOffImg = R.drawable.busposinfo_circular_bus_off;
             busOnImg = R.drawable.busposinfo_circular_bus_on;
             busOnNsImg = R.drawable.busposinfo_circular_bus_on_nonstep;
+            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.circular_bus_dark);
         } else {
             busOffImg = R.drawable.busposinfo_express_bus_off;
             busOnImg = R.drawable.busposinfo_express_bus_on;
             busOnNsImg = R.drawable.busposinfo_express_bus_on_nonstep;
+            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.express_bus_dark);
         }
     }
 
@@ -114,6 +122,7 @@ public class BusPosInfoListAdapter extends BaseAdapter {
         String busId = busPosInfo.getBusId();
         String busIdNum = busId.substring(busId.length() - 4, busId.length());
         viewHolder.busId.setText(busIdNum);
+        viewHolder.busId.setBackgroundColor(budIdBackgroundColor);
         viewHolder.busId.setVisibility(View.VISIBLE);
 
         return itemView;
@@ -131,6 +140,7 @@ public class BusPosInfoListAdapter extends BaseAdapter {
 
         public BusPosInfoViewHolder(View itemView) {
             this.itemView = itemView;
+            itemView.setOnClickListener(this);
             favoriteBtn = (ToggleButton) itemView.findViewById(R.id.favorite_btn);
             favoriteBtn.setOnClickListener(this);
             busStopName = (TextView) itemView.findViewById(R.id.busstop_name);
@@ -148,6 +158,10 @@ public class BusPosInfoListAdapter extends BaseAdapter {
                 }
                 // 즐겨찾기 설정
                 RealmTransaction.createBusStopFavorite(mRealm, busStopId);
+            } else if( v == itemView ) {
+                Intent intent = new Intent( mContext , BusStopArrInfoActivity.class);
+                intent.putExtra("busStopId", busStopId);
+                mContext.startActivity(intent);
             }
         }
     }

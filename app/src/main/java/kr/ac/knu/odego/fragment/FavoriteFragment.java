@@ -8,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.SearchView;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -20,6 +19,7 @@ import kr.ac.knu.odego.item.Favorite;
  * Created by BHI on 2016-05-28.
  */
 public class FavoriteFragment extends Fragment {
+
     private Realm mRealm;
     private FavoriteListAdapter mFavoriteListAdapter;
     private LinearLayout rootView;
@@ -43,16 +43,17 @@ public class FavoriteFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        rootView = (LinearLayout) inflater.inflate(R.layout.fragment_search_list, container, false);
+        rootView = (LinearLayout) inflater.inflate(R.layout.fragment_favorite_list, container, false);
 
         mFavoriteListAdapter = new FavoriteListAdapter(this, null, true);
         RecyclerView favoriteListView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
         favoriteListView.setLayoutManager( new LinearLayoutManager(getContext()) );
         favoriteListView.setAdapter(mFavoriteListAdapter);
 
-        SearchView mSearchView = (SearchView) rootView.findViewById(R.id.search_view);
-        mSearchView.setVisibility(View.GONE);
-
         return rootView;
+    }
+
+    public Realm getmRealm() {
+        return mRealm;
     }
 }

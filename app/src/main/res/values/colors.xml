@@ -17,5 +17,10 @@
     <color name="express_bus">#ff4a38</color>
     <color name="circular_bus">#69d83c</color>
 
+    <color name="main_bus_dark">#568fd5</color>
+    <color name="branch_bus_dark">#e46d0c</color>
+    <color name="express_bus_dark">#c00202</color>
+    <color name="circular_bus_dark">#02b051</color>
+
     <color name="busstop_arrinfo_header">#4eb6ac</color>
 </resources>

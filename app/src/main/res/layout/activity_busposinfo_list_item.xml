@@ -26,7 +26,8 @@
         android:layout_alignParentTop="false"
         android:layout_toEndOf="@+id/favorite_btn"
         android:layout_marginLeft="8dp"
-        android:layout_centerVertical="true">
+        android:layout_centerVertical="true"
+        android:layout_toStartOf="@+id/bus_icon">
 
         <TextView
             android:layout_width="wrap_content"
@@ -35,7 +36,8 @@
             android:text="busstop_name"
             android:id="@+id/busstop_name"
             android:layout_gravity="left"
-            android:textColor="#000000" />
+            android:textColor="#000000"
+            android:singleLine="true" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -49,16 +51,17 @@
 
     <ImageView
         android:layout_width="50dp"
-        android:layout_height="80dp"
+        android:layout_height="70dp"
         android:id="@+id/bus_icon"
         android:layout_gravity="center_vertical|right"
-        android:src="@drawable/busposinfo_main_bus_off"
+        android:src="@drawable/busposinfo_express_bus_on_nonstep"
         android:layout_centerVertical="true"
-        android:layout_toStartOf="@+id/bus_id" />
+        android:layout_toStartOf="@+id/bus_id"
+        android:layout_marginRight="-2dp" />
 
     <TextView
         android:layout_width="wrap_content"
-        android:layout_height="47dp"
+        android:layout_height="38dp"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="8672"
         android:id="@+id/bus_id"
@@ -67,6 +70,7 @@
         android:gravity="left|center_vertical"
         android:ems="3"
         android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true" />
+        android:layout_centerVertical="true"
+        android:textColor="@android:color/white" />
 
 </RelativeLayout>

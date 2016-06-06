@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/header"
-    android:background="@color/main_bus">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/busposinfo_header_height"
-        android:gravity="bottom"
-        android:id="@+id/header_contents">
+        android:layout_height="120dp"
+        android:background="#FFb22c"
+        android:layout_weight="0.16"
+        android:gravity="bottom">
 
         <TextView
             android:layout_width="wrap_content"
@@ -21,8 +20,7 @@
             android:layout_gravity="left|center_horizontal"
             android:textColor="#FFFFFF"
             android:layout_marginLeft="15dp"
-            android:gravity="bottom"
-            android:textSize="@dimen/default_text_size" />
+            android:gravity="bottom" />
 
         <LinearLayout
             android:orientation="horizontal"
@@ -35,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="35dp"
                 android:text="101"
-                android:id="@+id/route_no"
+                android:id="@+id/route_name"
                 android:textColor="#FFFFFF"
                 android:layout_marginLeft="15dp"
                 android:gravity="bottom" />
@@ -45,26 +43,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="total route"
-                    android:id="@+id/total_route"
-                    android:textSize="@dimen/default_text_size"
-                    android:maxEms="9"
-                    android:singleLine="true"
-                    android:marqueeRepeatLimit="marquee_forever"
-                    android:ellipsize="marquee"
-                    android:focusable="false"
-                    android:selectAllOnFocus="false" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?android:attr/textAppearanceSmall"
-                    android:text="05:30 ~22:00"
-                    android:id="@+id/total_route_time"
-                    android:textSize="@dimen/default_text_size" />
+                    android:text="8673"
+                    android:id="@+id/bus_unique_num"
+                    android:textSize="20dp"/>
             </LinearLayout>
 
         </LinearLayout>
@@ -73,13 +59,14 @@
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="#ffc000"
             android:gravity="center_vertical">
 
             <TextView
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
                 android:textSize="20dp"
-                android:text="배차간격"
+                android:text="목적지"
                 android:layout_gravity="left|center_horizontal"
                 android:textColor="#FFFFFF"
                 android:layout_marginLeft="15dp"
@@ -89,39 +76,14 @@
                 android:layout_width="250dp"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="평일 15분 / 주말 20분"
-                android:id="@+id/interval"
+                android:text="목적지를 선택해주세요"
+                android:id="@+id/total_routed"
                 android:textColor="#FFFFFF"
-                android:autoText="false"
-                android:textSize="@dimen/default_text_size" />
+                android:background="#ffc000"
+                />
 
         </LinearLayout>
 
-        <Switch
-            android:id="@+id/switch1"
-            android:layout_height="30dp"
-            android:layout_width="125.5dp"
-
-            android:textOff="정방향"
-            android:textOn="역방향"
-
-            android:checked="false"
-            android:thumb="@color/colorPrimary"
-
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="26dp"
-            android:layout_marginBottom="15dp"
-
-            android:layout_gravity="right"
-            android:layout_alignParentTop="true"
-            android:layout_centerInParent="true"
-            android:layout_centerHorizontal="true"
-
-            android:alpha="0.7"
-
-            android:focusable="false"
-            />
-
     </LinearLayout>
 
-</FrameLayout>
+</LinearLayout>

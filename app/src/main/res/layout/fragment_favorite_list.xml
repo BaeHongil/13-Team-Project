@@ -8,13 +8,6 @@
     android:paddingTop="8dp"
     android:orientation="vertical">
 
-    <SearchView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/search_view"
-        android:iconifiedByDefault="false"
-        android:queryHint="@string/route_search_view_hint" />
-
     <android.support.v7.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -37,14 +30,6 @@
             android:src="@android:drawable/ic_menu_info_details"
             android:layout_centerHorizontal="true"
             android:layout_above="@+id/no_message" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/no_history"
-            android:id="@+id/no_message"
-            android:textSize="@dimen/default_text_size"
-            android:layout_centerInParent="true" />
 
     </RelativeLayout>
 

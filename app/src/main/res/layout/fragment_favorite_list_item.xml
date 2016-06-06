@@ -17,12 +17,14 @@
 
     <LinearLayout
         android:orientation="vertical"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginLeft="7dp"
         android:gravity="center_vertical"
-        android:layout_centerVertical="true"
-        android:layout_toEndOf="@+id/item_icon">
+        android:layout_alignParentTop="false"
+        android:layout_toStartOf="@+id/favorite_btn"
+        android:layout_toEndOf="@+id/item_icon"
+        android:layout_centerVertical="true">
 
         <TextView
             android:layout_width="wrap_content"
@@ -47,5 +49,19 @@
             android:layout_marginLeft="2dp" />
 
     </LinearLayout>
+
+    <ToggleButton
+        android:layout_width="@dimen/favorite_btn_size"
+        android:layout_height="@dimen/favorite_btn_size"
+        android:id="@+id/favorite_btn"
+        android:textOff=""
+        android:textOn=""
+        android:background="@drawable/favorite_btn"
+        android:allowUndo="false"
+        android:layout_gravity="center_vertical"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginRight="5dp"
+        android:checked="true" />
 
 </RelativeLayout>
