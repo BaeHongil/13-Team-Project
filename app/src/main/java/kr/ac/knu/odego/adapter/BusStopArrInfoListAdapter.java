@@ -5,11 +5,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
+import io.realm.Realm;
 import kr.ac.knu.odego.R;
+import kr.ac.knu.odego.common.BusType;
+import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.item.ArrInfo;
+import kr.ac.knu.odego.item.Favorite;
+import kr.ac.knu.odego.item.Route;
 import kr.ac.knu.odego.item.RouteArrInfo;
 
 /**
@@ -17,11 +22,13 @@ import kr.ac.knu.odego.item.RouteArrInfo;
  */
 public class BusStopArrInfoListAdapter extends BaseAdapter {
     private Context mContext;
+    private Realm mRealm;
     private RouteArrInfo[] routeArrInfos;
     private LayoutInflater inflater;
 
-    public BusStopArrInfoListAdapter(Context mContext) {
+    public BusStopArrInfoListAdapter(Context mContext, Realm mRealm) {
         this.mContext = mContext;
+        this.mRealm = mRealm;
         inflater = LayoutInflater.from(mContext);
     }
 
@@ -54,41 +61,64 @@ public class BusStopArrInfoListAdapter extends BaseAdapter {
         RouteArrInfoViewHolder viewHolder = null;
         RouteArrInfo routeArrInfo = routeArrInfos[position];
 
+        Route mRoute = routeArrInfo.getMRoute();
         if(convertView==null) {
             itemView = inflater.inflate(R.layout.activity_busstoparrinfo_list_item, parent, false);
             viewHolder = new RouteArrInfoViewHolder(itemView);
+            viewHolder.routeId = mRoute.getId();
             itemView.setTag( viewHolder );
         }
         else {
             itemView = convertView;
             viewHolder = (RouteArrInfoViewHolder) itemView.getTag();
+            viewHolder.routeId = mRoute.getId();
         }
-        viewHolder.favoriteBtn.setImageResource(R.drawable.favorite_off);
-        viewHolder.routeNo.setText( routeArrInfo.getMRoute().getNo() );
-        viewHolder.routeDirection.setText( routeArrInfo.getMRoute().getDirection() );
-        viewHolder.routeDirection.setSelected(true);
-        ArrInfo[] arrInfos = routeArrInfo.getArrInfos();
+        if( mRealm.where(Favorite.class).equalTo("mRoute.id", mRoute.getId()).count() > 0 )
+            viewHolder.favoriteBtn.setChecked(true);
+        else
+            viewHolder.favoriteBtn.setChecked(false);
 
+        viewHolder.routeNo.setText( mRoute.getNo() );
+        String busType = mRoute.getType();
+        int routeNoColor;
+        if (BusType.MAIN.getName().equals( busType ))
+            routeNoColor = mContext.getResources().getColor(R.color.main_bus);
+        else if (BusType.BRANCH.getName().equals( busType ))
+            routeNoColor = mContext.getResources().getColor(R.color.branch_bus);
+        else if (BusType.EXPRESS.getName().equals( busType ))
+            routeNoColor = mContext.getResources().getColor(R.color.express_bus);
+        else if (BusType.CIRCULAR.getName().equals( busType ))
+            routeNoColor = mContext.getResources().getColor(R.color.circular_bus);
+        else
+            routeNoColor = mContext.getResources().getColor(R.color.colorPrimaryDark);
+        viewHolder.routeNo.setTextColor( routeNoColor );
+        viewHolder.routeDirection.setText( mRoute.getDirection() );
+        viewHolder.routeDirection.setSelected(true);
+
+        ArrInfo[] arrInfos = routeArrInfo.getArrInfos();
         if( arrInfos[0].getMessage() != null ) {
             viewHolder.remainedMin1.setText("도착정보없음");
+            viewHolder.remainedMin1.setTextColor( mContext.getResources().getColor(R.color.colorPrimary) );
             viewHolder.remainedBusStop1.setVisibility(View.GONE);
             viewHolder.remainedMin2.setVisibility(View.GONE);
             viewHolder.remainedBusStop2.setVisibility(View.GONE);
             return itemView;
         }
         if( arrInfos.length == 1 ) {
-            viewHolder.remainedMin1.setText( String.valueOf(arrInfos[0].getRemainMin()) );
-            viewHolder.remainedBusStop1.setText( String.valueOf(arrInfos[0].getRemainBusStopCount()) );
+            viewHolder.remainedMin1.setText( arrInfos[0].getRemainMin() + "분" );
+            viewHolder.remainedMin1.setTextColor( mContext.getResources().getColor(R.color.colorPrimaryDark) );
+            viewHolder.remainedBusStop1.setText( arrInfos[0].getRemainBusStopCount() + "개소" );
 
             viewHolder.remainedBusStop1.setVisibility(View.VISIBLE);
             viewHolder.remainedMin2.setVisibility(View.GONE);
             viewHolder.remainedBusStop2.setVisibility(View.GONE);
             return itemView;
         }
-        viewHolder.remainedMin1.setText( String.valueOf(arrInfos[0].getRemainMin()) );
-        viewHolder.remainedBusStop1.setText( String.valueOf(arrInfos[0].getRemainBusStopCount()) );
-        viewHolder.remainedMin2.setText( String.valueOf(arrInfos[1].getRemainMin()) );
-        viewHolder.remainedBusStop2.setText( String.valueOf(arrInfos[1].getRemainBusStopCount()) );
+        viewHolder.remainedMin1.setText( arrInfos[0].getRemainMin() + "분" );
+        viewHolder.remainedMin1.setTextColor( mContext.getResources().getColor(R.color.colorPrimaryDark) );
+        viewHolder.remainedBusStop1.setText( arrInfos[0].getRemainBusStopCount() + "개소" );
+        viewHolder.remainedMin2.setText( arrInfos[1].getRemainMin() + "분" );
+        viewHolder.remainedBusStop2.setText( arrInfos[1].getRemainBusStopCount() + "개소" );
 
         viewHolder.remainedBusStop1.setVisibility(View.VISIBLE);
         viewHolder.remainedMin2.setVisibility(View.VISIBLE);
@@ -97,9 +127,11 @@ public class BusStopArrInfoListAdapter extends BaseAdapter {
         return itemView;
     }
 
-    private class RouteArrInfoViewHolder {
+    private class RouteArrInfoViewHolder implements View.OnClickListener {
+        public String routeId;
+
         public View itemView;
-        public ImageButton favoriteBtn;
+        public ToggleButton favoriteBtn;
         public TextView routeNo;
         public TextView routeDirection;
         public TextView remainedMin1, remainedMin2;
@@ -107,7 +139,8 @@ public class BusStopArrInfoListAdapter extends BaseAdapter {
 
         public RouteArrInfoViewHolder(View itemView) {
             this.itemView = itemView;
-            favoriteBtn = (ImageButton) itemView.findViewById(R.id.favorite_btn);
+            favoriteBtn = (ToggleButton) itemView.findViewById(R.id.favorite_btn);
+            favoriteBtn.setOnClickListener(this);
             routeNo = (TextView) itemView.findViewById(R.id.route_no);
             routeDirection = (TextView) itemView.findViewById(R.id.route_direction);
             remainedMin1 = (TextView) itemView.findViewById(R.id.remained_min1);
@@ -115,5 +148,18 @@ public class BusStopArrInfoListAdapter extends BaseAdapter {
             remainedBusStop1 = (TextView) itemView.findViewById(R.id.remained_busstop1);
             remainedBusStop2 = (TextView) itemView.findViewById(R.id.remained_busstop2);
         }
+
+        @Override
+        public void onClick(View v) {
+            if( v == favoriteBtn ) {
+                if( !favoriteBtn.isChecked() ) { // 즐겨찾기 해제
+                    RealmTransaction.deleteRouteFavorite(mRealm, routeId);
+                    return;
+                }
+                // 즐겨찾기 설정
+                RealmTransaction.createRouteFavorite(mRealm, routeId);
+            }
+        }
     }
+
 }

@@ -242,8 +242,6 @@ public class MainActivity extends AppCompatActivity
             return mFragmentTitleList.get(position);
         }
     }
-
-
     /**
      * 버스정류장, 노선 DB 생성 AsyncTask
      */

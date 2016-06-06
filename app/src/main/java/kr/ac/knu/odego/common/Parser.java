@@ -122,6 +122,8 @@ public class Parser {
             if (!response.isSuccessful()) throw new IOException("response fail");
 
             mRealm.beginTransaction();
+            if( isDeleteAll ) // 모든 BusStop 객체 삭제
+                mRealm.where(BusStop.class).findAll().deleteAllFromRealm();
             mRealm.createAllFromJson(BusStop.class, response.body().byteStream());
             mRealm.commitTransaction();
 
@@ -191,6 +193,8 @@ public class Parser {
             if (!response.isSuccessful()) throw new IOException("response fail");
 
             mRealm.beginTransaction();
+            if( isDeleteAll ) // 모든 Route객체 삭제
+                mRealm.where(Route.class).findAll().deleteAllFromRealm();
             mRealm.createAllFromJson(Route.class, response.body().byteStream());
             mRealm.commitTransaction();
             return;
@@ -338,22 +342,24 @@ public class Parser {
 
             for(int arrInfoIndex = 0; arrInfoIndex < arrInfoElemsSize; arrInfoIndex++) {
                 Element arrInfoElem = arrInfoElems.get(arrInfoIndex);
-                int remainMin = Integer.parseInt( arrInfoElem.getElementsByClass("st").text() );
+                ArrInfo arrInfo = new ArrInfo();
+                arrInfo.setRemainMin( Integer.parseInt( arrInfoElem.getElementsByClass("st").text() ) );
 
-                String curBusStopName = arrInfoElem.child(1).getElementsByTag("td").text();
-
-                Element secondChild = arrInfoElem.child(2);
-                String endBusStopName, strRemainBusStopCount;
-                if( secondChild.getElementsByTag("th").text().equals("종료정류소") ) { // 버스막차일 경우에만 생기는 항목
-                    endBusStopName = secondChild.getElementsByTag("td").text();
-                    strRemainBusStopCount = arrInfoElem.child(3).getElementsByTag("td").text();
-                } else {
-                    endBusStopName = null;
-                    strRemainBusStopCount = secondChild.getElementsByTag("td").text();
+                String curBusStopName, endBusStopName;
+                for(Element elem : arrInfoElem.select("tr")) {
+                    String tr = elem.select("tr").text().trim();
+                    if( tr.equals("현재정류소") )
+                        arrInfo.setCurBusStopName(elem.select("td").text());
+                    else if( tr.equals("종료정류소") )
+                        arrInfo.setEndBusStopName(elem.select("td").text());
+                    else if( tr.equals("남은정류소") ) {
+                        String strRemainBusStopCount = elem.select("td").text();
+                        arrInfo.setRemainBusStopCount( Integer.parseInt(
+                                strRemainBusStopCount.substring(0, strRemainBusStopCount.indexOf("개소")
+                                )) );
+                    }
                 }
-                int remainBusStopCount = Integer.parseInt( strRemainBusStopCount.substring(0, strRemainBusStopCount.indexOf("개소")) );
-
-                arrInfos[arrInfoIndex] = new ArrInfo(remainMin, curBusStopName, endBusStopName, remainBusStopCount);
+                arrInfos[arrInfoIndex] = arrInfo;
             }
         } else {  // 도착 정보가 없을 때 -> "기점에서 버스가 출발 대기중이거나 운행 정보가 없습니다.", "기점에서 22시 26분에 출발예정입니다. "
             arrInfos = new ArrInfo[1];
@@ -452,8 +458,9 @@ public class Parser {
             Response response = client.newCall(request).execute();
             if (!response.isSuccessful()) throw new IOException("response fail");
 
-            mRealm.beginTransaction();
             Route route = gson.fromJson(response.body().charStream(), Route.class);
+            mRealm.beginTransaction();
+            mRealm.copyToRealmOrUpdate(route);
             mRealm.commitTransaction();
             return route;
         }

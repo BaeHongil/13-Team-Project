@@ -2,12 +2,12 @@ package kr.ac.knu.odego.activity;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,10 +30,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import io.realm.Realm;
+import io.realm.RealmResults;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.BusStopArrInfoListAdapter;
 import kr.ac.knu.odego.common.Parser;
+import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.item.BusStop;
+import kr.ac.knu.odego.item.Favorite;
 import kr.ac.knu.odego.item.Route;
 import kr.ac.knu.odego.item.RouteArrInfo;
 
@@ -49,12 +52,14 @@ public class BusStopArrInfoActivity extends AppCompatActivity implements Observa
     private int headerHeight;
 
     private Realm mRealm;
+    private RealmResults<Favorite> favoriteRealmResults;
     private BusStop mBusStop;
-    private String busStopId = "7021025700";
+    private String busStopId;
     private Route[] routes;
     private GetBusStopArrinfoAsyncTask getBusStopArrinfoAsyncTask;
 
     private int actionBarSize;
+    private int themeColor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,26 +67,27 @@ public class BusStopArrInfoActivity extends AppCompatActivity implements Observa
         setContentView(R.layout.activity_busstoparrinfo) ;
         mContext = this;
 
+        themeColor = getResources().getColor(R.color.busstop_arrinfo_header);
         if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
-            getWindow().setStatusBarColor(getResources().getColor(R.color.main_bus));
+            getWindow().setStatusBarColor(themeColor);
 
+        mRealm = Realm.getDefaultInstance();
         mListView = (ObservableListView) findViewById(R.id.list);
         mListView.setScrollViewCallbacks(this);
-        mListAdapter = new BusStopArrInfoListAdapter(this);
+        mListAdapter = new BusStopArrInfoListAdapter(this, mRealm);
         mListView.setAdapter(mListAdapter);
         headerHeight = getResources().getDimensionPixelSize(R.dimen.busstoparrinfo_header_height);
         setPaddingView(mListView, headerHeight);
 
         // 도착정보 얻기
-        mRealm = Realm.getDefaultInstance();
         busStopId = getIntent().getExtras().getString("busStopId");
         getBusStopArrinfoAsyncTask = new GetBusStopArrinfoAsyncTask();
         getBusStopArrinfoAsyncTask.execute();
         mBusStop = mRealm.where(BusStop.class).equalTo("id", busStopId).findFirst();
+        favoriteRealmResults = mRealm.where(Favorite.class).equalTo("mBusStop.id", busStopId).findAll(); // 버스정류장 즐겨찾기 여부
 
         // 헤더의 정류장 정보 등록
         mHeaderView = findViewById(R.id.header);
-        mHeaderView.setBackgroundColor(getResources().getColor(R.color.main_bus));
         HeaderContentsView = mHeaderView.findViewById(R.id.header_contents);
         TextView HeaderBusStopNo = (TextView) HeaderContentsView.findViewById(R.id.busstop_no);
         TextView HeaderBusStopName = (TextView) HeaderContentsView.findViewById(R.id.busstop_name);
@@ -89,10 +95,10 @@ public class BusStopArrInfoActivity extends AppCompatActivity implements Observa
         HeaderBusStopName.setText(mBusStop.getName());
 
         mToolbarView = (Toolbar)findViewById(R.id.toolbar);
-        mToolbarView.setTitle("타이틀");
+        mToolbarView.setTitle(mBusStop.getName());
         //mToolbarView.setSubtitle("서브타이틀");
         // 툴바 색상 설정
-        mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, getResources().getColor(R.color.main_bus)));
+        mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, themeColor));
         setSupportActionBar(mToolbarView);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // 뒤로가기 아이콘
 
@@ -138,8 +144,15 @@ public class BusStopArrInfoActivity extends AppCompatActivity implements Observa
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.busstoparrinfo, menu);
         MenuItem favoriteMenuItem = menu.findItem(R.id.action_favorite);
+        if( favoriteRealmResults.size() > 0 ) {
+            favoriteMenuItem.setIcon(R.drawable.favorite_on);
+            favoriteMenuItem.setChecked(true);
+        }
+        else {
+            favoriteMenuItem.setIcon(R.drawable.favorite_off);
+            favoriteMenuItem.setChecked(false);
+        }
 
-        // favoriteMenuItem.setIcon(R.drawable.bt_on);
 
         return true;
     }
@@ -150,8 +163,21 @@ public class BusStopArrInfoActivity extends AppCompatActivity implements Observa
             case android.R.id.home:
                 finish();
                 return true;
+            case R.id.action_favorite:
+                boolean isChecked = !item.isChecked();
+                item.setChecked(isChecked);
+                if( isChecked ) {
+                    item.setIcon(R.drawable.favorite_on);
+                    RealmTransaction.createBusStopFavorite(mRealm, busStopId);
+                } else {
+                    item.setIcon(R.drawable.favorite_off);
+                    RealmTransaction.deleteBusStopFavorite(mRealm, busStopId);
+                }
+
+                return true;
+            default:
+                return false;
         }
-        return false;
     }
 
     @Override
@@ -162,18 +188,16 @@ public class BusStopArrInfoActivity extends AppCompatActivity implements Observa
 
     @Override
     public void onScrollChanged(int scrollY, boolean firstScroll, boolean dragging) {
-        Log.i("scrollY", scrollY+"");
-        int baseColor = getResources().getColor(R.color.main_bus);
-        int textColor = getResources().getColor(R.color.colorPrimaryDark);
+        int baseColor = themeColor;
         float alpha = Math.min(1, (float) scrollY / (headerHeight/2) );
         if( alpha == 1 ) {
             mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(1, baseColor));
             float textAlpha = Math.min(1, (float) (scrollY-headerHeight/2) / (getActionBarSize()/2) );
-            mToolbarView.setTitleTextColor(ScrollUtils.getColorWithAlpha(textAlpha, textColor));
+            mToolbarView.setTitleTextColor(ScrollUtils.getColorWithAlpha(textAlpha, Color.WHITE));
         }
         else {
             mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, baseColor));
-            mToolbarView.setTitleTextColor(ScrollUtils.getColorWithAlpha(0, textColor));
+            mToolbarView.setTitleTextColor(ScrollUtils.getColorWithAlpha(0, Color.WHITE));
         }
         //mToolbarView.setSubtitleTextColor(ScrollUtils.getColorWithAlpha(alpha, textColor));
 

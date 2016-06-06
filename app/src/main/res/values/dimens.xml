@@ -9,5 +9,6 @@
 
     <dimen name="default_text_size">16dp</dimen>
 
+    <dimen name="favorite_btn_size">40dp</dimen>
     <dimen name="busstoparrinfo_header_height">150dp</dimen>
 </resources>

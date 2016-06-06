@@ -16,4 +16,6 @@
     <color name="branch_bus">#ffaa38</color>
     <color name="express_bus">#ff4a38</color>
     <color name="circular_bus">#69d83c</color>
+
+    <color name="busstop_arrinfo_header">#4eb6ac</color>
 </resources>

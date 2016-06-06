@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="@dimen/busstoparrinfo_header_height"
     android:id="@+id/header"
-    android:background="#FFb22c">
+    android:background="@color/busstop_arrinfo_header">
 
     <LinearLayout
         android:orientation="vertical"
