@@ -287,7 +287,7 @@ public class MainActivity extends AppCompatActivity
                 Toast.makeText(getBaseContext(), toastMsg, Toast.LENGTH_LONG);
                 return;
             }
-            View.inflate(getBaseContext(), R.layout.activity_main_progress, mContentsLayout);
+            View.inflate(getBaseContext(), R.layout.progress, mContentsLayout);
             mViewPager.setVisibility(View.INVISIBLE);
         }
 

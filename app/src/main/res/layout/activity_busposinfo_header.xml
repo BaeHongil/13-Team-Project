@@ -99,7 +99,7 @@
 
         </LinearLayout>
 
-        <Switch
+       <!-- <Switch
             android:id="@+id/switch1"
             android:layout_height="30dp"
             android:layout_width="125.5dp"
@@ -122,6 +122,25 @@
             android:alpha="0.7"
 
             android:focusable="false"
+            />-->
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/switch1"
+            android:textOn="역방향"
+            android:textOff="정방향"
+            android:showText="true"
+            android:thumb="@drawable/switch_inner_holo_light"
+            android:track="@drawable/switch_track_holo_light"
+            android:switchMinWidth="60dp"
+            android:thumbTextPadding="12dp"
+            android:switchTextAppearance="@style/switchTextAppearance"
+
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="15dp"
+            android:layout_marginBottom="15dp"
+
+            android:layout_gravity="right"
             />
 
     </LinearLayout>

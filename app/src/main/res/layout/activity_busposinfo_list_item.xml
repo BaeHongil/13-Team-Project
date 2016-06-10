@@ -57,7 +57,7 @@
         android:src="@drawable/busposinfo_express_bus_on_nonstep"
         android:layout_centerVertical="true"
         android:layout_toStartOf="@+id/bus_id"
-        android:layout_marginRight="-2dp" />
+        android:layout_marginRight="-3dp" />
 
     <TextView
         android:layout_width="wrap_content"

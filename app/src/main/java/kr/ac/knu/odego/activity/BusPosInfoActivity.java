@@ -17,7 +17,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.ksoichiro.android.observablescrollview.ObservableListView;
-import com.github.ksoichiro.android.observablescrollview.ScrollState;
 import com.github.ksoichiro.android.observablescrollview.ScrollUtils;
 
 import java.io.IOException;
@@ -50,13 +49,10 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
     private RealmResults<Favorite> favoriteRealmResults;
     private Route mRoute;
     private String routeId = "3000306000";
-    private BusStop[] busStops;
-
-    private Switch swc;
+    private BusStop[][] busStops = new BusStop[2][]; // index 0은 역방향, index 1은 정방향
 
     private int themeColor;
     private boolean isForward = true;
-    private BusPosInfo[] busPosInfos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,13 +63,14 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         routeId = getIntent().getExtras().getString("routeId");
         mRoute = mRealm.where(Route.class).equalTo("id", routeId).findFirst();
 
+        // 리스트 뷰 설정
         mListView = (ObservableListView) findViewById(R.id.list);
         mListView.setScrollViewCallbacks(this);
-
         mListAdapter = new BusPosInfoListAdapter(this, mRealm, mRoute.getType());
         mListView.setAdapter(mListAdapter);
         headerHeight = getResources().getDimensionPixelSize(R.dimen.busposinfo_header_height);
         setPaddingView(mListView, headerHeight);
+        setUpProgressLayout(R.string.refreshing_busposinfo_data, headerHeight);  // 새로고침 레이아웃 설정
 
         // 도착정보 얻기
         GetBusPosInfoAsyncTask getBusPosinfoAsyncTask = new GetBusPosInfoAsyncTask();
@@ -85,7 +82,7 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         HeaderContentsView = mHeaderView.findViewById(R.id.header_contents);
         // 현재 노선상세정보 있는지 확인후 노선정보 등록
         if( mRoute.getUpdatedDetail() != null && OdegoApplication.isToday( mRoute.getUpdatedDetail() ) )
-            setHeaderDate();
+            setHeaderData();
         else {
             GetRouteDetailInfoAsyncTask getRouteDetailInfoAsyncTask = new GetRouteDetailInfoAsyncTask();
             getRouteDetailInfoAsyncTask.execute();
@@ -93,7 +90,6 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
 
         // 테마색상 노선유형에 따라 설정
         String routeType = mRoute.getType();
-
         if (RouteType.MAIN.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.main_bus);
         else if (RouteType.BRANCH.getName().equals( routeType ))
@@ -103,8 +99,6 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         else if (RouteType.CIRCULAR.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.circular_bus);
 
-
-
         if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
             getWindow().setStatusBarColor(themeColor);
         mHeaderView.setBackgroundColor(themeColor);
@@ -112,12 +106,11 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         mToolbarView = (Toolbar)findViewById(R.id.toolbar);
         mToolbarView.setTitle(mRoute.getNo());
         mToolbarView.bringToFront();
-        //mToolbarView.setSubtitle("서브타이틀");
+
         // 툴바 색상 설정
         mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, themeColor));
         setSupportActionBar(mToolbarView);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // 뒤로가기 아이콘 표시
-
 
         // 플로팅액션버튼 설정
         FloatingActionButton refreshBtn = (FloatingActionButton) findViewById(R.id.refresh);
@@ -136,7 +129,7 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         mListBackgroundView = findViewById(R.id.list_background);
     }
 
-    private void setHeaderDate() {
+    private void setHeaderData() {
         TextView headerRouteType = (TextView) HeaderContentsView.findViewById(R.id.route_type);
         TextView headerRouteNo = (TextView) HeaderContentsView.findViewById(R.id.route_no);
         TextView headerTotalRoute = (TextView) HeaderContentsView.findViewById(R.id.total_route);
@@ -155,32 +148,17 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
                         mRoute.getInterval(), mRoute.getIntervalSun())
         );
 
-        swc = (Switch)findViewById(R.id.switch1);
-
-                swc.setOnCheckedChangeListener(new Switch.OnCheckedChangeListener() {
-                    public void onCheckedChanged(CompoundButton cb, boolean isChecking) {
-                        String str = String.valueOf(isChecking); // boolean -> String 변환
-                        // 정방향 역방향
-                        if(isChecking) {
-                            Toast.makeText(getApplication(), "역방향으로", Toast.LENGTH_SHORT).show();
-
-                        }
-                        else {
-                            Toast.makeText(getApplication(), "정방향으로", Toast.LENGTH_SHORT).show();
-
-                        }
-                busStops = null;
+        Switch swc = (Switch)findViewById(R.id.switch1);
+        swc.setOnCheckedChangeListener(new Switch.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton cb, boolean isChecking) {
+                isForward = !isChecking;
                 GetBusPosInfoAsyncTask getBusPosinfoAsyncTask = new GetBusPosInfoAsyncTask();
-                getBusPosinfoAsyncTask.execute(!isChecking);
+                getBusPosinfoAsyncTask.execute(isForward);
             }
         });
 
         swc.setFocusable(false);
-
-
-
     }
-
 
     @Override
     protected void onDestroy() {
@@ -238,33 +216,25 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
 
     @Override
     public void onScrollChanged(int scrollY, boolean firstScroll, boolean dragging) {
-        float alpha = Math.min(1, (float) scrollY / (headerHeight/2) );
-        if( alpha == 1 ) {
+        float alpha = Math.min(1, (float) scrollY / headerHeight ); // 헤더에 적용할 알파
+        if( alpha == 1 ) { // 헤더가 사라졌을 때 툴바 텍스트 나타나도록 알파 설정
             mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(1, themeColor));
-            float textAlpha = Math.min(1, (float) (scrollY-headerHeight/2) / (getActionBarSize()/2) );
+            float textAlpha = Math.min(1, (float) (scrollY-headerHeight) / (getActionBarSize()/2) );
             mToolbarView.setTitleTextColor(ScrollUtils.getColorWithAlpha(textAlpha, Color.WHITE));
         }
-        else {
+        else { // 헤더가 아직 있을 때 툴바 투명
             mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, themeColor));
             mToolbarView.setTitleTextColor(ScrollUtils.getColorWithAlpha(0, Color.WHITE));
         }
-        //mToolbarView.setSubtitleTextColor(ScrollUtils.getColorWithAlpha(alpha, textColor));
 
-        HeaderContentsView.setAlpha(1-alpha);
+        HeaderContentsView.setAlpha(1-alpha); // 헤더전체뷰 알파 설정
 
         // Translate list background
         mHeaderView.setTranslationY(-scrollY / 2);
         mListBackgroundView.setTranslationY(Math.max(0, -scrollY + headerHeight));
     }
 
-    @Override
-    public void onDownMotionEvent() {
-    }
-
-    @Override
-    public void onUpOrCancelMotionEvent(ScrollState scrollState) {
-    }
-
+    // 노선 상세정보 가져오는 쓰레드
     private class GetRouteDetailInfoAsyncTask extends AsyncTask<Void, String, Route> {
 
         @Override
@@ -290,25 +260,29 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
 
         @Override
         protected void onPostExecute(Route route) {
-            setHeaderDate();
+            setHeaderData();
         }
     }
 
-
+    // 버스도착정보 가져오는 쓰레드
     private class GetBusPosInfoAsyncTask extends AsyncTask<Boolean, String, BusPosInfo[]> {
+
+        @Override
+        protected void onPreExecute() {
+            mListView.setVisibility(View.GONE);
+            getProgressLayout().setVisibility(View.VISIBLE);
+        }
 
         @Override
         protected BusPosInfo[] doInBackground(Boolean... params) {
             boolean isForward = params[0];
 
             try {
-                busPosInfos = mParser.getBusPosInfos(routeId, isForward);
+                BusPosInfo[] busPosInfos = mParser.getBusPosInfos(routeId, isForward);
                 return busPosInfos;
             } catch (IOException e) {
                 publishProgress( getString(R.string.network_error_msg) );
             }
-
-
 
             return null;
         }
@@ -323,25 +297,26 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
             if( busPosInfos == null )
                 return;
 
-            if( busStops == null ) { // 버스정류장의 노선들 정보가 없을 때
-                busStops = new BusStop[busPosInfos.length];
+            int index = isForward ? 1 : 0;
+            if( busStops[index] == null ) { // 버스정류장의 노선들 정보가 없을 때
+                busStops[index] = new BusStop[busPosInfos.length];
                 for (int i = 0; i < busPosInfos.length; i++) {
                     BusPosInfo busPosInfo = busPosInfos[i];
                     String busStopId = busPosInfo.getBusStopId();
                     BusStop mBusStop = mRealm.where(BusStop.class).equalTo("id", busStopId).findFirst();
 
-                    busStops[i] = mBusStop;
+                    busStops[index][i] = mBusStop;
                     busPosInfo.setMBusStop(mBusStop);
                 }
             } else {
                 for (int i = 0; i < busPosInfos.length; i++)
-                    busPosInfos[i].setMBusStop(busStops[i]);
+                    busPosInfos[i].setMBusStop(busStops[index][i]);
             }
 
-
+            getProgressLayout().setVisibility(View.GONE);
+            mListView.setVisibility(View.VISIBLE);
             mListAdapter.setBusPosInfos(busPosInfos);
             mListAdapter.notifyDataSetChanged();
-
         }
     }
 }

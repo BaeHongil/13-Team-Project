@@ -15,7 +15,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.ksoichiro.android.observablescrollview.ObservableListView;
-import com.github.ksoichiro.android.observablescrollview.ScrollState;
 import com.github.ksoichiro.android.observablescrollview.ScrollUtils;
 
 import java.io.IOException;
@@ -59,17 +58,16 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_busstoparrinfo) ;
 
-        themeColor = ContextCompat.getColor(this, R.color.busstop_arrinfo_header);
-        if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
-            getWindow().setStatusBarColor(themeColor);
-
         mRealm = Realm.getDefaultInstance();
+
+        // 리스트 뷰 설정
         mListView = (ObservableListView) findViewById(R.id.list);
         mListView.setScrollViewCallbacks(this);
         mListAdapter = new BusStopArrInfoListAdapter(this, mRealm);
         mListView.setAdapter(mListAdapter);
         headerHeight = getResources().getDimensionPixelSize(R.dimen.busstoparrinfo_header_height);
         setPaddingView(mListView, headerHeight);
+        setUpProgressLayout(R.string.refreshing_arrinfo_data, headerHeight);  // 새로고침 레이아웃 설정
 
         // 도착정보 얻기
         busStopId = getIntent().getExtras().getString("busStopId");
@@ -86,9 +84,13 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
         headerBusStopNo.setText(mBusStop.getNo());
         headerBusStopName.setText(mBusStop.getName());
 
+        // 상태바 색상 변경
+        themeColor = ContextCompat.getColor(this, R.color.busstop_arrinfo_header);
+        if (Build.VERSION.SDK_INT >= 21)
+            getWindow().setStatusBarColor(themeColor);
+
         mToolbarView = (Toolbar)findViewById(R.id.toolbar);
         mToolbarView.setTitle(mBusStop.getName());
-        //mToolbarView.setSubtitle("서브타이틀");
         // 툴바 색상 설정
         mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, themeColor));
         setSupportActionBar(mToolbarView);
@@ -168,34 +170,31 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
 
     @Override
     public void onScrollChanged(int scrollY, boolean firstScroll, boolean dragging) {
-        float alpha = Math.min(1, (float) scrollY / (headerHeight/2) );
-        if( alpha == 1 ) {
+        float alpha = Math.min(1, (float) scrollY / (headerHeight/2) ); // 헤더에 적용할 알파
+        if( alpha == 1 ) { // 헤더가 사라졌을 때 툴바 텍스트 나타나도록 알파 설정
             mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(1, themeColor));
             float textAlpha = Math.min(1, (float) (scrollY-headerHeight/2) / (getActionBarSize()/2) );
             mToolbarView.setTitleTextColor(ScrollUtils.getColorWithAlpha(textAlpha, Color.WHITE));
         }
-        else {
+        else { // 헤더가 아직 있을 때 툴바 투명
             mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, themeColor));
             mToolbarView.setTitleTextColor(ScrollUtils.getColorWithAlpha(0, Color.WHITE));
         }
         //mToolbarView.setSubtitleTextColor(ScrollUtils.getColorWithAlpha(alpha, textColor));
 
-        HeaderContentsView.setAlpha(1-alpha);
+        HeaderContentsView.setAlpha(1-alpha); // 헤더전체뷰 알파 설정
 
         // Translate list background
         mHeaderView.setTranslationY(-scrollY / 2);
         mListBackgroundView.setTranslationY(Math.max(0, -scrollY + headerHeight));
     }
 
-    @Override
-    public void onDownMotionEvent() {
-    }
-
-    @Override
-    public void onUpOrCancelMotionEvent(ScrollState scrollState) {
-    }
-
     private class GetBusStopArrinfoAsyncTask extends AsyncTask<Void, String, RouteArrInfo[]> {
+        @Override
+        protected void onPreExecute() {
+            mListView.setVisibility(View.GONE);
+            getProgressLayout().setVisibility(View.VISIBLE);
+        }
 
         @Override
         protected RouteArrInfo[] doInBackground(Void... params) {
@@ -255,11 +254,17 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
                     routes[i] = mRoute;
                     routeArrInfo.setMRoute(mRoute);
                 }
+
+                // 리스트아이템이 적으면, 위로가기 리스트뷰 푸터 제거
+                if( routeArrInfos.length < 5 )
+                    mListView.removeFooterView(getFooter());
             } else {
                 for (int i = 0; i < routeArrInfos.length; i++)
                     routeArrInfos[i].setMRoute(routes[i]);
             }
 
+            getProgressLayout().setVisibility(View.GONE);
+            mListView.setVisibility(View.VISIBLE);
             mListAdapter.setRouteArrInfos(routeArrInfos);
             mListAdapter.notifyDataSetChanged();
         }

@@ -10,8 +10,10 @@ import lombok.Setter;
 @Setter
 public class BeaconArrInfo {
     private String routeId;
+    private Route mRoute;
     private boolean isForward;
     private String busId;
     private int foundIndex;
-    private BusPosInfo[] busPosInfos;
+    private String[] busStopIds;
+    private BusStop[] busStops;
 }

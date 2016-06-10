@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -26,8 +25,6 @@ import kr.ac.knu.odego.interfaces.BeaconSetGoalListener;
 import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Route;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Created by Brick on 2016-06-09.
@@ -86,7 +83,7 @@ public class BeaconActivity extends AppCompatActivity{
         HeaderContentsView = mHeaderView.findViewById(R.id.header_contents);
         // 현재 노선상세정보 있는지 확인후 노선정보 등록
         if( mRoute.getUpdatedDetail() != null && OdegoApplication.isToday( mRoute.getUpdatedDetail() ) )
-            setHeaderDate();
+            setHeaderData();
         else {
             GetRouteDetailInfoAsyncTask getRouteDetailInfoAsyncTask = new GetRouteDetailInfoAsyncTask();
             getRouteDetailInfoAsyncTask.execute();
@@ -135,7 +132,7 @@ public class BeaconActivity extends AppCompatActivity{
 
 
 
-    private void setHeaderDate() {
+    private void setHeaderData() {
 
         TextView headerRouteType = (TextView) HeaderContentsView.findViewById(R.id.route_type);
         TextView headerRouteName = (TextView) HeaderContentsView.findViewById(R.id.route_name);
@@ -256,7 +253,7 @@ public class BeaconActivity extends AppCompatActivity{
 
         @Override
         protected void onPostExecute(Route route) {
-            setHeaderDate();
+            setHeaderData();
         }
     }
 
