@@ -27,9 +27,9 @@ import io.realm.RealmResults;
 import kr.ac.knu.odego.OdegoApplication;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.BusPosInfoListAdapter;
-import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.common.RealmTransaction;
+import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Favorite;
@@ -56,12 +56,12 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
 
     private int themeColor;
     private boolean isForward = true;
+    private BusPosInfo[] busPosInfos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_busposinfo);
-
 
         mRealm = Realm.getDefaultInstance();
         routeId = getIntent().getExtras().getString("routeId");
@@ -81,6 +81,7 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         favoriteRealmResults = mRealm.where(Favorite.class).equalTo("mRoute.id", routeId).findAll(); // 버스정류장 즐겨찾기 여부
 
         mHeaderView = findViewById(R.id.header);
+        mHeaderView.bringToFront();
         HeaderContentsView = mHeaderView.findViewById(R.id.header_contents);
         // 현재 노선상세정보 있는지 확인후 노선정보 등록
         if( mRoute.getUpdatedDetail() != null && OdegoApplication.isToday( mRoute.getUpdatedDetail() ) )
@@ -92,6 +93,7 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
 
         // 테마색상 노선유형에 따라 설정
         String routeType = mRoute.getType();
+
         if (RouteType.MAIN.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.main_bus);
         else if (RouteType.BRANCH.getName().equals( routeType ))
@@ -101,12 +103,15 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         else if (RouteType.CIRCULAR.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.circular_bus);
 
+
+
         if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
             getWindow().setStatusBarColor(themeColor);
         mHeaderView.setBackgroundColor(themeColor);
 
         mToolbarView = (Toolbar)findViewById(R.id.toolbar);
         mToolbarView.setTitle(mRoute.getNo());
+        mToolbarView.bringToFront();
         //mToolbarView.setSubtitle("서브타이틀");
         // 툴바 색상 설정
         mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, themeColor));
@@ -152,14 +157,21 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
 
         swc = (Switch)findViewById(R.id.switch1);
 
-        swc.setOnCheckedChangeListener(new Switch.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton cb, boolean isChecking) {
-                String str = String.valueOf(isChecking); // boolean -> String 변환
-                // 정방향 역방향
-                if(isChecking)
-                    Toast.makeText(getApplication(), "정방향이래", Toast.LENGTH_SHORT).show();
-                else
-                    Toast.makeText(getApplication(), "역방향이래", Toast.LENGTH_SHORT).show();
+                swc.setOnCheckedChangeListener(new Switch.OnCheckedChangeListener() {
+                    public void onCheckedChanged(CompoundButton cb, boolean isChecking) {
+                        String str = String.valueOf(isChecking); // boolean -> String 변환
+                        // 정방향 역방향
+                        if(isChecking) {
+                            Toast.makeText(getApplication(), "역방향으로", Toast.LENGTH_SHORT).show();
+
+                        }
+                        else {
+                            Toast.makeText(getApplication(), "정방향으로", Toast.LENGTH_SHORT).show();
+
+                        }
+                busStops = null;
+                GetBusPosInfoAsyncTask getBusPosinfoAsyncTask = new GetBusPosInfoAsyncTask();
+                getBusPosinfoAsyncTask.execute(!isChecking);
             }
         });
 
@@ -288,13 +300,15 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         @Override
         protected BusPosInfo[] doInBackground(Boolean... params) {
             boolean isForward = params[0];
-            try {
-                BusPosInfo[] busPosInfos = mParser.getBusPosInfos(routeId, isForward);
 
+            try {
+                busPosInfos = mParser.getBusPosInfos(routeId, isForward);
                 return busPosInfos;
             } catch (IOException e) {
                 publishProgress( getString(R.string.network_error_msg) );
             }
+
+
 
             return null;
         }
@@ -324,9 +338,9 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
                     busPosInfos[i].setMBusStop(busStops[i]);
             }
 
+
             mListAdapter.setBusPosInfos(busPosInfos);
             mListAdapter.notifyDataSetChanged();
-
 
         }
     }

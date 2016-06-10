@@ -31,6 +31,7 @@ public class OdegoApplication extends Application {
                 .deleteRealmIfMigrationNeeded() // 마이그레이션 필요시 전체삭제 메소드이므로 릴리즈시 삭제요망
                 .build();
         Realm.setDefaultConfiguration(busInfoRealmConfig);
+    //    Realm.deleteRealm(busInfoRealmConfig);
 
         /* Chrome App Stetho 설정 */
         Stetho.initialize(

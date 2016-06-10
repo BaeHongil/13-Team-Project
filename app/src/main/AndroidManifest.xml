@@ -43,6 +43,10 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
+        <activity android:name=".activity.BeaconActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
         <service android:name="com.perples.recosdk.RECOBeaconService" />
         <service
             android:name=".service.BeaconService"

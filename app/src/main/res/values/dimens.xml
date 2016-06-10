@@ -12,6 +12,7 @@
     <dimen name="favorite_btn_size">40dp</dimen>
     <dimen name="busstoparrinfo_header_height">150dp</dimen>
     <dimen name="busposinfo_header_height">200dp</dimen>
+    <dimen name="beacon_header_height">140dp</dimen>
 
     <dimen name="search_item_name_size">22dp</dimen>
     <dimen name="search_item_detail_size">15dp</dimen>

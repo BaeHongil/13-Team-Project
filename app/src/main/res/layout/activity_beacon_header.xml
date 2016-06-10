@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="@dimen/beacon_header_height"
+    android:id="@+id/header"
+    android:background="@color/main_bus">
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="120dp"
-        android:background="#FFb22c"
+        android:layout_height="140dp"
         android:layout_weight="0.16"
-        android:gravity="bottom">
+        android:gravity="bottom"
+        android:id="@+id/header_contents">
 
         <TextView
             android:layout_width="wrap_content"
@@ -19,23 +22,25 @@
             android:id="@+id/route_type"
             android:layout_gravity="left|center_horizontal"
             android:textColor="#FFFFFF"
-            android:layout_marginLeft="15dp"
+            android:layout_marginLeft="30dp"
             android:gravity="bottom" />
 
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="40dp"
-            android:gravity="bottom">
+            android:gravity="bottom"
+            android:layout_marginLeft="15dp">
 
             <TextView
-                android:layout_width="120dp"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:textSize="35dp"
                 android:text="101"
                 android:id="@+id/route_name"
                 android:textColor="#FFFFFF"
                 android:layout_marginLeft="15dp"
+
                 android:gravity="bottom" />
 
             <LinearLayout
@@ -49,8 +54,10 @@
                     android:layout_height="wrap_content"
                     android:textAppearance="?android:attr/textAppearanceSmall"
                     android:text="8673"
-                    android:id="@+id/bus_unique_num"
-                    android:textSize="20dp"/>
+                    android:id="@+id/bus_id_no"
+                    android:textSize="20dp"
+                    android:layout_marginBottom="5dp"
+                    />
             </LinearLayout>
 
         </LinearLayout>
@@ -58,32 +65,34 @@
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#ffc000"
-            android:gravity="center_vertical">
+            android:layout_height="35dp"
+            android:gravity="center_vertical"
+            android:layout_marginLeft="15dp"
+            android:layout_marginBottom="10dp">
 
             <TextView
-                android:layout_width="120dp"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:textSize="20dp"
                 android:text="목적지"
-                android:layout_gravity="left|center_horizontal"
+                android:layout_gravity="left|center_vertical"
                 android:textColor="#FFFFFF"
                 android:layout_marginLeft="15dp"
-                android:gravity="fill_horizontal|center_vertical" />
+                android:gravity="fill_horizontal|center_vertical"
+                />
 
             <TextView
                 android:layout_width="250dp"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:text="목적지를 선택해주세요"
-                android:id="@+id/total_routed"
+                android:id="@+id/bus_goal"
                 android:textColor="#FFFFFF"
-                android:background="#ffc000"
+                android:layout_gravity="center_vertical"
                 />
 
         </LinearLayout>
 
     </LinearLayout>
 
-</LinearLayout>
+</FrameLayout>

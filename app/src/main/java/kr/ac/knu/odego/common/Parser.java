@@ -233,7 +233,7 @@ public class Parser {
                 for( RouteType routeType : RouteType.values() ) {
                     String strBusType = routeType.getName(true);
                     if(strBusType.equals(routeTp)) {
-                        route.setType(strBusType);
+                        route.setType( routeType.getName() );
                         break;
                     }
                 }

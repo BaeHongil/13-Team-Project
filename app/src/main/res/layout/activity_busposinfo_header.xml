@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="@dimen/busposinfo_header_height"
     android:id="@+id/header"
     android:background="@color/main_bus">
 
@@ -39,6 +40,7 @@
                 android:textColor="#FFFFFF"
                 android:layout_marginLeft="15dp"
                 android:gravity="bottom" />
+
 
             <LinearLayout
                 android:orientation="vertical"
