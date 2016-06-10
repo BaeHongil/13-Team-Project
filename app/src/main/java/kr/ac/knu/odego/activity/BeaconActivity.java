@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -48,15 +49,16 @@ public class BeaconActivity extends AppCompatActivity{
     private String routeId = "3000306000";
     private BusStop[] busStops;
 
-    private String busIdNo = "2471";
+    private String busIdNo = "1031";
 
     private int themeColor;
     private boolean isForward = true;
     private BusPosInfo[] busPosInfos;
 
-    @Setter
-    @Getter
-    private int selectedPositions = -1;
+    private int presentPosition=-1;
+
+
+    BeaconSetGoalListener beaconSetGoalListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,19 +71,12 @@ public class BeaconActivity extends AppCompatActivity{
 
         mListView = (ListView) findViewById(R.id.list);
 
-        BeaconSetGoalListener beaconSetGoalListener = new BeaconSetGoalListener() {
+        beaconSetGoalListener = new BeaconSetGoalListener() {
             @Override
             public void setGoalTextView(String text) {
                 setGoal(text);
             }
         };
-
-
-
-        mListAdapter = new BeaconListAdapter(this, mRealm, mRoute.getType());
-        mListView.setAdapter(mListAdapter);
-        mListAdapter.setSetGoalListener( beaconSetGoalListener );
-
 
         // 도착정보 얻기
         GetBusPosInfoAsyncTask getBusPosinfoAsyncTask = new GetBusPosInfoAsyncTask();
@@ -96,6 +91,8 @@ public class BeaconActivity extends AppCompatActivity{
             GetRouteDetailInfoAsyncTask getRouteDetailInfoAsyncTask = new GetRouteDetailInfoAsyncTask();
             getRouteDetailInfoAsyncTask.execute();
         }
+
+
 
         // 테마색상 노선유형에 따라 설정
         String routeType = mRoute.getType();
@@ -123,7 +120,20 @@ public class BeaconActivity extends AppCompatActivity{
 
         // mListBackgroundView makes ListView's background except header view.
         mListBackgroundView = findViewById(R.id.list_background);
+
+        setAdapter();
+
     }
+
+    private void setAdapter()
+    {
+        mListAdapter = new BeaconListAdapter(this, mRealm, mRoute.getType(), busIdNo, presentPosition);
+        mListView.setAdapter(mListAdapter);
+        mListAdapter.setSetGoalListener(beaconSetGoalListener);
+
+    }
+
+
 
     private void setHeaderDate() {
 
@@ -131,6 +141,7 @@ public class BeaconActivity extends AppCompatActivity{
         TextView headerRouteName = (TextView) HeaderContentsView.findViewById(R.id.route_name);
         TextView headerBusIdNo = (TextView) HeaderContentsView.findViewById(R.id.bus_id_no);
         bus_goal = (TextView) findViewById( R.id.bus_goal );
+
 
         headerRouteType.setText(mRoute.getType());
         headerRouteName.setText(mRoute.getNo());
@@ -159,9 +170,25 @@ public class BeaconActivity extends AppCompatActivity{
         @Override
         protected BusPosInfo[] doInBackground(Boolean... params) {
             boolean isForward = params[0];
-
             try {
                 busPosInfos = mParser.getBusPosInfos(routeId, isForward);
+
+                // 포지션 정하기
+                String busNums = null;
+                String busIdNm = null;
+                for (int i = 0; i < busPosInfos.length; i++) {
+                    if (busPosInfos[i].getBusId() != null) {
+                        busNums = busPosInfos[i].getBusId().toString();
+                        busIdNm = busNums.substring(busNums.length() - 4, busNums.length());
+                        if (busIdNm.equals(busIdNo)) {
+                            presentPosition = i;
+                            break;
+                        }
+                    }
+                }
+
+
+
                 return busPosInfos;
             } catch (IOException e) {
                 publishProgress( getString(R.string.network_error_msg) );
@@ -179,10 +206,10 @@ public class BeaconActivity extends AppCompatActivity{
 
         @Override
         protected void onPostExecute(BusPosInfo[] busPosInfos) {
-            if( busPosInfos == null )
+            if (busPosInfos == null)
                 return;
 
-            if( busStops == null ) { // 버스정류장의 노선들 정보가 없을 때
+            if (busStops == null) { // 버스정류장의 노선들 정보가 없을 때
                 busStops = new BusStop[busPosInfos.length];
                 for (int i = 0; i < busPosInfos.length; i++) {
                     BusPosInfo busPosInfo = busPosInfos[i];
@@ -197,18 +224,13 @@ public class BeaconActivity extends AppCompatActivity{
                     busPosInfos[i].setMBusStop(busStops[i]);
             }
 
-            mListAdapter.setBusPosInfos(busPosInfos);
+            mListAdapter.setBusPosInfos(busPosInfos, presentPosition);
             mListAdapter.notifyDataSetChanged();
+            mListView.setSelection(presentPosition);
 
-            // 포지션 정하기
-            for(int i=0 ; i<busPosInfos.length ; i++)
-                if(busPosInfos[i].getBusId() != null)
-                    if(busPosInfos[i].getBusId().equals(busIdNo)) {
-                    mListView.setSelection(10);
-                    break;
-                }
         }
     }
+
     private class GetRouteDetailInfoAsyncTask extends AsyncTask<Void, String, Route> {
 
         @Override

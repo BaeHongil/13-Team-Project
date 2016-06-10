@@ -3,7 +3,7 @@ package kr.ac.knu.odego.adapter;
 import android.content.Context;
 import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,13 +40,15 @@ public class BeaconListAdapter extends BaseAdapter {
     ImageView postImageView;
     TextView postBusId;
 
-    @Setter
-    @Getter
-    int selectedPositions;
 
-    public BeaconListAdapter(Context mContext, Realm mRealm, String routeType) {
+    private String busIdNo;
+    private int presentPosition;
+
+    public BeaconListAdapter(Context mContext, Realm mRealm, String routeType, String busIdNo, int presentPosition) {
         this.mContext = mContext;
         this.mRealm = mRealm;
+        this.busIdNo = busIdNo;
+        this.presentPosition = presentPosition;
 
         inflater = LayoutInflater.from(mContext);
 
@@ -81,8 +83,9 @@ public class BeaconListAdapter extends BaseAdapter {
         }
     }
 
-    public void setBusPosInfos(BusPosInfo[] busPosInfos) {
+    public void setBusPosInfos(BusPosInfo[] busPosInfos, int presentPosition) {
         this.busPosInfos = busPosInfos;
+        this.presentPosition = presentPosition;
     }
 
     @Override
@@ -112,8 +115,6 @@ public class BeaconListAdapter extends BaseAdapter {
         ViewHolder viewHolder = null;
         BusPosInfo busPosInfo = busPosInfos[position];
 
-
-
         BusStop mBusStop = busPosInfo.getMBusStop();
         if(convertView==null) {
             itemView = inflater.inflate(R.layout.activity_busposinfo_list_item, parent, false);
@@ -129,29 +130,37 @@ public class BeaconListAdapter extends BaseAdapter {
         if( mRealm.where(Favorite.class).equalTo("mBusStop.id", mBusStop.getId()).count() > 0 )
             viewHolder.favoriteBtn.setChecked(true);
         else
-        viewHolder.busStopName.setText(mBusStop.getName());
+            viewHolder.busStopName.setText(mBusStop.getName());
         viewHolder.busStopNo.setText(mBusStop.getNo());
         viewHolder.busId.setVisibility(View.INVISIBLE);
 
-        // 버스가 없을 때
+        // 버스 엇음
         if( busPosInfo.getBusId() == null ) {
             viewHolder.busIcon.setImageResource(busOffImg);
             viewHolder.busId.setVisibility(View.INVISIBLE);
             return itemView;
         }
 
-        // 버스가 있을 때
+        String busId = busPosInfo.getBusId();
+        String busIdNum = busId.substring(busId.length() - 4, busId.length());
+
+        // 버스 있지만 다른버스
+        if(!busIdNum.equals(busIdNo)){
+
+            viewHolder.busIcon.setImageResource(busOffImg);
+            viewHolder.busId.setVisibility(View.INVISIBLE);
+            return itemView;
+        }
+
+        // 버스 표시
         if( busPosInfo.isNonStepBus() )
             viewHolder.busIcon.setImageResource(busOnNsImg);
         else
             viewHolder.busIcon.setImageResource(busOnImg);
-        String busId = busPosInfo.getBusId();
-        String busIdNum = busId.substring(busId.length() - 4, busId.length());
+
         viewHolder.busId.setText(busIdNum);
         viewHolder.busId.setBackgroundColor(budIdBackgroundColor);
         viewHolder.busId.setVisibility(View.VISIBLE);
-
-
 
         return itemView;
     }
@@ -166,8 +175,11 @@ public class BeaconListAdapter extends BaseAdapter {
         public ImageView busIcon;
         public TextView busId;
 
+        int position;
+
         public ViewHolder(View itemView) {
             this.itemView = itemView;
+            this.position = position;
 
             itemView.setOnClickListener(this);
             favoriteBtn = (ToggleButton) itemView.findViewById(R.id.favorite_btn);
@@ -201,11 +213,11 @@ public class BeaconListAdapter extends BaseAdapter {
         {
             if(bool) {
                 goalOn();
-                Log.d("params","goal On");
+
             }
             else{
                 goalOff();
-                Log.d("params","goal Off");
+
             }
         }
 
@@ -218,8 +230,26 @@ public class BeaconListAdapter extends BaseAdapter {
                 }
                 // 즐겨찾기 설정
                 RealmTransaction.createBusStopFavorite(mRealm, busStopId);
+                return;
             }
-            else {
+
+            // 현재위치보다 아래에 있는 것들만 작용 해야함
+            String busstopNo = busStopNo.getText().toString();
+
+            if(busPosInfos != null)
+                for(int i = 0 ; i < busPosInfos.length ; i ++) {
+
+                    BusStop mBusStop2 = busPosInfos[i].getMBusStop();
+                    if (mBusStop2.getNo().toString().equals(busstopNo)) {
+                        position = i;
+                        break;
+                    } else
+                        position = -1;
+                }
+
+
+
+            if ( position > presentPosition ) {
 
                 // 처음 고름
                 if ( postBusId == null ) {
@@ -232,6 +262,7 @@ public class BeaconListAdapter extends BaseAdapter {
                     postImageView.setImageResource( busOffImg );
                     postBusId = null;
                     setGoal(false);
+                    goalListener.setGoalTextView("목적지를 선택하세요.");
                 }
 
                 else {
@@ -250,7 +281,7 @@ public class BeaconListAdapter extends BaseAdapter {
 
     public void setSetGoalListener(BeaconSetGoalListener goalListener)
     {
-           this.goalListener = goalListener;
+        this.goalListener = goalListener;
     }
 
 
