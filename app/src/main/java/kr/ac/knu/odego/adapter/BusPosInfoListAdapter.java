@@ -2,7 +2,10 @@ package kr.ac.knu.odego.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.BitmapFactory;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,12 +31,16 @@ public class BusPosInfoListAdapter extends BaseAdapter {
     private Realm mRealm;
     private BusPosInfo[] busPosInfos;
     private LayoutInflater inflater;
-    private int busOffImg, busOnImg, busOnNsImg;
+    private int busOffImg, busOnImg, busOnNsImg, busOffFinalImg;
     private int budIdBackgroundColor;
+
+    private String routeType;
 
     public BusPosInfoListAdapter(Context mContext, Realm mRealm, String routeType) {
         this.mContext = mContext;
         this.mRealm = mRealm;
+
+        this.routeType = routeType;
 
         inflater = LayoutInflater.from(mContext);
         if( routeType.equals( RouteType.MAIN.getName() ) ) {
@@ -41,22 +48,27 @@ public class BusPosInfoListAdapter extends BaseAdapter {
             busOnImg = R.drawable.busposinfo_main_bus_on;
             busOnNsImg = R.drawable.busposinfo_main_bus_on_nonstep;
             budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.main_bus_dark);
+            busOffFinalImg = R.drawable.busposinfo_main_bus_off_final;
         } else if( routeType.equals( RouteType.BRANCH.getName() ) ) {
             busOffImg = R.drawable.busposinfo_branch_bus_off;
             busOnImg = R.drawable.busposinfo_branch_bus_on;
             busOnNsImg = R.drawable.busposinfo_branch_bus_on_nonstep;
             budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.branch_bus_dark);
+            busOffFinalImg = R.drawable.busposinfo_branch_bus_off_final;
         } else if( routeType.equals( RouteType.CIRCULAR.getName() ) ) {
             busOffImg = R.drawable.busposinfo_circular_bus_off;
             busOnImg = R.drawable.busposinfo_circular_bus_on;
             busOnNsImg = R.drawable.busposinfo_circular_bus_on_nonstep;
             budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.circular_bus_dark);
+            busOffFinalImg = R.drawable.busposinfo_circular_bus_off_final;
         } else {
             busOffImg = R.drawable.busposinfo_express_bus_off;
             busOnImg = R.drawable.busposinfo_express_bus_on;
             busOnNsImg = R.drawable.busposinfo_express_bus_on_nonstep;
             budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.express_bus_dark);
+            busOffFinalImg = R.drawable.busposinfo_express_bus_off_final;
         }
+
     }
 
     public void setBusPosInfos(BusPosInfo[] busPosInfos) {
@@ -100,6 +112,8 @@ public class BusPosInfoListAdapter extends BaseAdapter {
             viewHolder.busStopId = mBusStop.getId();
         }
 
+
+
         if( mRealm.where(Favorite.class).equalTo("mBusStop.id", mBusStop.getId()).count() > 0 )
             viewHolder.favoriteBtn.setChecked(true);
         else
@@ -107,10 +121,18 @@ public class BusPosInfoListAdapter extends BaseAdapter {
         viewHolder.busStopName.setText(mBusStop.getName());
         viewHolder.busStopNo.setText(mBusStop.getNo());
 
+
         // 버스가 없을 때
         if( busPosInfo.getBusId() == null ) {
             viewHolder.busIcon.setImageResource(busOffImg);
             viewHolder.busId.setVisibility(View.INVISIBLE);
+
+            //마지막일 때
+            if(busPosInfos[busPosInfos.length -1].getMBusStop().getName().equals(
+                    viewHolder.busStopName.getText().toString()
+            ))
+                viewHolder.busIcon.setImageResource( busOffFinalImg );
+
             return itemView;
         }
 

@@ -46,7 +46,7 @@ public class BeaconActivity extends AppCompatActivity{
     private String routeId = "3000306000";
     private BusStop[] busStops;
 
-    private String busIdNo = "1031";
+    private String busIdNo = "1018";
 
     private int themeColor;
     private boolean isForward = true;
