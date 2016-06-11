@@ -1,6 +1,7 @@
 package kr.ac.knu.odego.adapter;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
 
@@ -31,18 +32,23 @@ public class BeaconListAdapter extends BaseAdapter {
     private Realm mRealm;
     private BusPosInfo[] busPosInfos;
     private LayoutInflater inflater;
-    private int busOffImg, busOnImg, busOnNsImg, goalImg;
+    private int busOffImg, busOnImg, busOnNsImg, goalImg, busOffFinalImg, busOffFirstImg;;
     private int budIdBackgroundColor;
 
     private BeaconSetGoalListener goalListener;
 
-
     ImageView postImageView;
     TextView postBusId;
 
-
     private String busIdNo;
     private int presentPosition;
+    private String routeType;
+
+    private final String MAIN = "main";
+    private final String BRANCH = "branch";
+    private final String CIRCULAR = "circular";
+    private final String EXPRESS = "express";
+
 
     public BeaconListAdapter(Context mContext, Realm mRealm, String routeType, String busIdNo, int presentPosition) {
         this.mContext = mContext;
@@ -52,35 +58,30 @@ public class BeaconListAdapter extends BaseAdapter {
 
         inflater = LayoutInflater.from(mContext);
 
-        if( routeType.equals( RouteType.MAIN.getName() ) ) {
-            busOffImg = R.drawable.busposinfo_main_bus_off;
-            busOnImg = R.drawable.busposinfo_main_bus_on;
-            busOnNsImg = R.drawable.busposinfo_main_bus_on_nonstep;
-            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.main_bus_dark);
-            goalImg = R.drawable.beacon_main_goal;
+        Resources res = mContext.getResources();
+        String packageName = mContext.getPackageName();
+        String type;
+        this.routeType = routeType;
 
-        } else if( routeType.equals( RouteType.BRANCH.getName() ) ) {
-            busOffImg = R.drawable.busposinfo_branch_bus_off;
-            busOnImg = R.drawable.busposinfo_branch_bus_on;
-            busOnNsImg = R.drawable.busposinfo_branch_bus_on_nonstep;
-            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.branch_bus_dark);
-            goalImg = R.drawable.beacon_branch_goal;
+        inflater = LayoutInflater.from(mContext);
+        if( routeType.equals( RouteType.MAIN.getName() ) )
+            type = MAIN;
+        else if( routeType.equals( RouteType.BRANCH.getName() ) )
+            type = BRANCH;
+        else if( routeType.equals( RouteType.CIRCULAR.getName() ) )
+            type = CIRCULAR;
+        else
+            type = EXPRESS;
+        busOffImg = res.getIdentifier("busposinfo_"+type+"_bus_off","drawable", packageName );
+        busOnImg = res.getIdentifier("busposinfo_"+type+"_bus_on","drawable", packageName );
+        busOnNsImg = res.getIdentifier("busposinfo_"+type+"_bus_on_nonstep","drawable", packageName );
+        budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.main_bus_dark);
+        budIdBackgroundColor = ContextCompat.getColor(mContext,
+                res.getIdentifier(""+type+"_bus_dark","color", packageName ));
+        busOffFirstImg = res.getIdentifier("busposinfo_"+type+"_bus_off_first","drawable", packageName );
+        busOffFinalImg = res.getIdentifier("busposinfo_"+type+"_bus_off_final","drawable", packageName );
+        goalImg = res.getIdentifier("beacon_"+type+"_goal","drawable", packageName );
 
-        } else if( routeType.equals( RouteType.CIRCULAR.getName() ) ) {
-            busOffImg = R.drawable.busposinfo_circular_bus_off;
-            busOnImg = R.drawable.busposinfo_circular_bus_on;
-            busOnNsImg = R.drawable.busposinfo_circular_bus_on_nonstep;
-            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.circular_bus_dark);
-            goalImg = R.drawable.beacon_circular_goal;
-
-        } else {
-            busOffImg = R.drawable.busposinfo_express_bus_off;
-            busOnImg = R.drawable.busposinfo_express_bus_on;
-            busOnNsImg = R.drawable.busposinfo_express_bus_on_nonstep;
-            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.express_bus_dark);
-            goalImg = R.drawable.beacon_express_goal;
-
-        }
     }
 
     public void setBusPosInfos(BusPosInfo[] busPosInfos, int presentPosition) {
@@ -134,11 +135,25 @@ public class BeaconListAdapter extends BaseAdapter {
         viewHolder.busStopNo.setText(mBusStop.getNo());
         viewHolder.busId.setVisibility(View.INVISIBLE);
 
-        // 버스 엇음
+        // 버스 없음
         if( busPosInfo.getBusId() == null ) {
             viewHolder.busIcon.setImageResource(busOffImg);
             viewHolder.busId.setVisibility(View.INVISIBLE);
+
+            //처음일 때
+            if(busPosInfos[0].getMBusStop().getName().equals(
+                    viewHolder.busStopName.getText().toString()
+            ))
+                viewHolder.busIcon.setImageResource( busOffFirstImg );
+
+            //마지막일 때
+            if(busPosInfos[busPosInfos.length -1].getMBusStop().getName().equals(
+                    viewHolder.busStopName.getText().toString()
+            ))
+                viewHolder.busIcon.setImageResource( busOffFinalImg );
+
             return itemView;
+
         }
 
         String busId = busPosInfo.getBusId();

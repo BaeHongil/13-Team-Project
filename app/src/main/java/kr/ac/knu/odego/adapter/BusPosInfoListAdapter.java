@@ -14,6 +14,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import javax.annotation.Resource;
+
 import io.realm.Realm;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.activity.BusStopArrInfoActivity;
@@ -31,43 +33,41 @@ public class BusPosInfoListAdapter extends BaseAdapter {
     private Realm mRealm;
     private BusPosInfo[] busPosInfos;
     private LayoutInflater inflater;
-    private int busOffImg, busOnImg, busOnNsImg, busOffFinalImg;
+    private int busOffImg, busOnImg, busOnNsImg, busOffFinalImg, busOffFirstImg;
     private int budIdBackgroundColor;
 
     private String routeType;
+
+    private final String MAIN = "main";
+    private final String BRANCH = "branch";
+    private final String CIRCULAR = "circular";
+    private final String EXPRESS = "express";
 
     public BusPosInfoListAdapter(Context mContext, Realm mRealm, String routeType) {
         this.mContext = mContext;
         this.mRealm = mRealm;
 
+        Resources res = mContext.getResources();
+        String packageName = mContext.getPackageName();
+        String type;
         this.routeType = routeType;
-
         inflater = LayoutInflater.from(mContext);
-        if( routeType.equals( RouteType.MAIN.getName() ) ) {
-            busOffImg = R.drawable.busposinfo_main_bus_off;
-            busOnImg = R.drawable.busposinfo_main_bus_on;
-            busOnNsImg = R.drawable.busposinfo_main_bus_on_nonstep;
-            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.main_bus_dark);
-            busOffFinalImg = R.drawable.busposinfo_main_bus_off_final;
-        } else if( routeType.equals( RouteType.BRANCH.getName() ) ) {
-            busOffImg = R.drawable.busposinfo_branch_bus_off;
-            busOnImg = R.drawable.busposinfo_branch_bus_on;
-            busOnNsImg = R.drawable.busposinfo_branch_bus_on_nonstep;
-            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.branch_bus_dark);
-            busOffFinalImg = R.drawable.busposinfo_branch_bus_off_final;
-        } else if( routeType.equals( RouteType.CIRCULAR.getName() ) ) {
-            busOffImg = R.drawable.busposinfo_circular_bus_off;
-            busOnImg = R.drawable.busposinfo_circular_bus_on;
-            busOnNsImg = R.drawable.busposinfo_circular_bus_on_nonstep;
-            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.circular_bus_dark);
-            busOffFinalImg = R.drawable.busposinfo_circular_bus_off_final;
-        } else {
-            busOffImg = R.drawable.busposinfo_express_bus_off;
-            busOnImg = R.drawable.busposinfo_express_bus_on;
-            busOnNsImg = R.drawable.busposinfo_express_bus_on_nonstep;
-            budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.express_bus_dark);
-            busOffFinalImg = R.drawable.busposinfo_express_bus_off_final;
-        }
+        if( routeType.equals( RouteType.MAIN.getName() ) )
+            type = MAIN;
+        else if( routeType.equals( RouteType.BRANCH.getName() ) )
+            type = BRANCH;
+        else if( routeType.equals( RouteType.CIRCULAR.getName() ) )
+            type = CIRCULAR;
+        else
+            type = EXPRESS;
+        busOffImg = res.getIdentifier("busposinfo_"+type+"_bus_off","drawable", packageName );
+        busOnImg = res.getIdentifier("busposinfo_"+type+"_bus_on","drawable", packageName );
+        busOnNsImg = res.getIdentifier("busposinfo_"+type+"_bus_on_nonstep","drawable", packageName );
+        budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.main_bus_dark);
+        budIdBackgroundColor = ContextCompat.getColor(mContext,
+                res.getIdentifier(""+type+"_bus_dark","color", packageName ));
+        busOffFirstImg = res.getIdentifier("busposinfo_"+type+"_bus_off_first","drawable", packageName );
+        busOffFinalImg = res.getIdentifier("busposinfo_"+type+"_bus_off_final","drawable", packageName );
 
     }
 
@@ -122,10 +122,18 @@ public class BusPosInfoListAdapter extends BaseAdapter {
         viewHolder.busStopNo.setText(mBusStop.getNo());
 
 
+
+
         // 버스가 없을 때
         if( busPosInfo.getBusId() == null ) {
             viewHolder.busIcon.setImageResource(busOffImg);
             viewHolder.busId.setVisibility(View.INVISIBLE);
+
+            //처음일 때
+            if(busPosInfos[0].getMBusStop().getName().equals(
+                    viewHolder.busStopName.getText().toString()
+            ))
+                viewHolder.busIcon.setImageResource( busOffFirstImg );
 
             //마지막일 때
             if(busPosInfos[busPosInfos.length -1].getMBusStop().getName().equals(
@@ -189,3 +197,4 @@ public class BusPosInfoListAdapter extends BaseAdapter {
     }
 
 }
+
