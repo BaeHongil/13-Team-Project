@@ -29,7 +29,11 @@ public class BusPosInfoListAdapter extends BaseAdapter {
     private Realm mRealm;
     private BusPosInfo[] busPosInfos;
     private LayoutInflater inflater;
-    private int busOffImg, busOnImg, busOnNsImg, busOffFinalImg, busOffFirstImg;
+
+    private int busOnImg, busOnFirstImg, busOnFinalImg;
+    private int busOnNonstepImg, busOnNonstepFinalImg, busOnNonstepFirstImg;
+
+    private int busOffImg, busOffFinalImg, busOffFirstImg;
     private int budIdBackgroundColor;
 
     private String routeType;
@@ -56,15 +60,20 @@ public class BusPosInfoListAdapter extends BaseAdapter {
             type = CIRCULAR;
         else
             type = EXPRESS;
-        busOffImg = res.getIdentifier("busposinfo_"+type+"_bus_off","drawable", packageName );
-        busOnImg = res.getIdentifier("busposinfo_"+type+"_bus_on","drawable", packageName );
-        busOnNsImg = res.getIdentifier("busposinfo_"+type+"_bus_on_nonstep","drawable", packageName );
-        budIdBackgroundColor = ContextCompat.getColor(mContext, R.color.main_bus_dark);
-        budIdBackgroundColor = ContextCompat.getColor(mContext,
-                res.getIdentifier(""+type+"_bus_dark","color", packageName ));
-        busOffFirstImg = res.getIdentifier("busposinfo_"+type+"_bus_off_first","drawable", packageName );
-        busOffFinalImg = res.getIdentifier("busposinfo_"+type+"_bus_off_final","drawable", packageName );
 
+        busOnImg = res.getIdentifier("busposinfo_"+type+"_bus_on", "drawable", packageName );
+        busOnFirstImg = res.getIdentifier("busposinfo_"+type+"_bus_on_first", "drawable", packageName );
+        busOnFinalImg = res.getIdentifier("busposinfo_"+type+"_bus_on_final", "drawable", packageName );
+        busOnNonstepImg = res.getIdentifier("busposinfo_"+type+"_bus_on_nonstep", "drawable", packageName );
+        busOnNonstepFirstImg = res.getIdentifier("busposinfo_"+type+"_bus_on_nonstep_first", "drawable", packageName );
+        busOnNonstepFinalImg = res.getIdentifier("busposinfo_"+type+"_bus_on_nonstep_final", "drawable", packageName );
+
+        busOffImg = res.getIdentifier("busposinfo_"+type+"_bus_off", "drawable", packageName );
+        busOffFirstImg = res.getIdentifier("busposinfo_"+type+"_bus_off_first", "drawable", packageName );
+        busOffFinalImg = res.getIdentifier("busposinfo_"+type+"_bus_off_final", "drawable", packageName );
+
+        budIdBackgroundColor = ContextCompat.getColor(mContext,
+                res.getIdentifier(type+"_bus_dark", "color", packageName ));
     }
 
     public void setBusPosInfos(BusPosInfo[] busPosInfos) {
@@ -128,7 +137,7 @@ public class BusPosInfoListAdapter extends BaseAdapter {
                 viewHolder.busIcon.setImageResource( busOffFirstImg );
 
             //마지막일 때
-            if(busPosInfos[busPosInfos.length -1].getMBusStop().getName().equals(
+            else if(busPosInfos[busPosInfos.length -1].getMBusStop().getName().equals(
                     viewHolder.busStopName.getText().toString()
             ))
                 viewHolder.busIcon.setImageResource( busOffFinalImg );
@@ -137,10 +146,38 @@ public class BusPosInfoListAdapter extends BaseAdapter {
         }
 
         // 버스가 있을 때
+        // nonstep버스
         if( busPosInfo.isNonStepBus() )
-            viewHolder.busIcon.setImageResource(busOnNsImg);
-        else
+        {
+            viewHolder.busIcon.setImageResource(busOnNonstepImg);
+            // 처음일 때
+            if(busPosInfos[0].getMBusStop().getName().equals(
+                    viewHolder.busStopName.getText().toString()
+            ))
+                viewHolder.busIcon.setImageResource(busOnNonstepFirstImg);
+            //마지막일 때
+            else if(busPosInfos[busPosInfos.length -1].getMBusStop().getName().equals(
+                    viewHolder.busStopName.getText().toString()
+            ))
+                viewHolder.busIcon.setImageResource( busOnNonstepFinalImg );
+        }
+
+        // step버스
+        else {
             viewHolder.busIcon.setImageResource(busOnImg);
+            // 처음일 때
+            if(busPosInfos[0].getMBusStop().getName().equals(
+                    viewHolder.busStopName.getText().toString()
+            ))
+                viewHolder.busIcon.setImageResource(busOnFirstImg);
+                //마지막일 때
+            else if(busPosInfos[busPosInfos.length -1].getMBusStop().getName().equals(
+                    viewHolder.busStopName.getText().toString()
+            ))
+                viewHolder.busIcon.setImageResource( busOnFinalImg );
+        }
+
+
         String busId = busPosInfo.getBusId();
         String busIdNum = busId.substring(busId.length() - 4, busId.length());
         viewHolder.busId.setText(busIdNum);
