@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity
 
     private BeaconService mBeaconService;
     private boolean mBound = false;
+    private boolean isStartSplash = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,9 +62,6 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        // splash 띄우기
-        startActivity( new Intent(this, SplashActivity.class) );
 
         mContentsLayout = (CoordinatorLayout) findViewById(R.id.contents_layout);
         // fragment 탭 페이지 설정
@@ -100,6 +98,7 @@ public class MainActivity extends AppCompatActivity
 
         // 블루투스 어뎁터 설정
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+        // mBtAdapter.enable();
 
         // realm 초기화
         mRealm = Realm.getDefaultInstance();
@@ -107,6 +106,16 @@ public class MainActivity extends AppCompatActivity
         // Parser로 DB 생성
         new DataBaseCreateAsyncTask().execute();
 
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if( !isStartSplash ) {
+            // splash 띄우기
+            startActivity(new Intent(this, SplashActivity.class));
+            isStartSplash = true;
+        }
     }
 
     @Override
@@ -298,7 +307,7 @@ public class MainActivity extends AppCompatActivity
                 mViewPager.setVisibility(View.VISIBLE);
             }
 
-            if( mBtAdapter != null ) {
+            if( mBtAdapter != null && mBtAdapter.isEnabled() ) {
                 Intent intent = new Intent(getBaseContext(), BeaconService.class);
                 startService(intent);
                 bindService(intent, mConnection, BIND_AUTO_CREATE);

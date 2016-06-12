@@ -54,27 +54,53 @@ public class BeaconActivity extends AppCompatActivity{
     private Handler mHandler = new BeaconActivityHandler();
     private NotiReqMsg mNotiReqMsg;
 
+    private boolean isEditable = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_beacon);
 
         mRealm = Realm.getDefaultInstance();
-        int beaconArrInfoIndex = mRealm.where(BeaconArrInfo.class).max("index").intValue();
-        mBeaconArrInfo = mRealm.where(BeaconArrInfo.class).equalTo("index", beaconArrInfoIndex).findFirst();
-        mNotiReqMsg = new NotiReqMsg(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(),
-                mBeaconArrInfo.getBusId(), mBeaconArrInfo.getDestIndex(), 2, fcmToken);
+        int beaconArrInfoIndex = getIntent().getExtras().getInt("beaconArrInfoIndex", -1);
+        if( beaconArrInfoIndex == -1 ) {
+            beaconArrInfoIndex = mRealm.where(BeaconArrInfo.class).max("index").intValue();
+            mBeaconArrInfo = mRealm.where(BeaconArrInfo.class).equalTo("index", beaconArrInfoIndex).findFirst();
+            mNotiReqMsg = new NotiReqMsg(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(),
+                    mBeaconArrInfo.getBusId(), mBeaconArrInfo.getDestIndex(), 2, fcmToken);
+        } else {
+            isEditable = false; // 버스도착알림 기록 확인시에는 수정불가
+            mBeaconArrInfo = mRealm.where(BeaconArrInfo.class).equalTo("index", beaconArrInfoIndex).findFirst();
+        }
 
-        // 프로그레스바 레이아웃 얻기
-        progressLayout = (LinearLayout) findViewById(R.id.progress_layout);
-        TextView progressText = (TextView) findViewById(R.id.progress_text);
-        progressText.setText(R.string.refreshing_busposinfo_data);
-
-        // 도착정보 얻기
         mListView = (ListView) findViewById(R.id.list);
         setAdapter();
-        GetBusPosAsyncTask getBusPosAsyncTask = new GetBusPosAsyncTask();
-        getBusPosAsyncTask.execute(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(), mBeaconArrInfo.getBusId());
+
+
+        FloatingActionButton refreshBtn = (FloatingActionButton) findViewById(R.id.refresh);
+        if( !isEditable )
+            refreshBtn.setVisibility(View.GONE);
+        else {
+            // 프로그레스바 레이아웃 얻기
+            progressLayout = (LinearLayout) findViewById(R.id.progress_layout);
+            TextView progressText = (TextView) findViewById(R.id.progress_text);
+            progressText.setText(R.string.refreshing_busposinfo_data);
+            // 도착정보 얻기
+            GetBusPosAsyncTask getBusPosAsyncTask = new GetBusPosAsyncTask();
+            getBusPosAsyncTask.execute(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(), mBeaconArrInfo.getBusId());
+
+            // 플로팅액션버튼 설정
+            refreshBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    GetBusPosAsyncTask getBusPosAsyncTask = new GetBusPosAsyncTask();
+                    getBusPosAsyncTask.execute(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(), mBeaconArrInfo.getBusId());
+
+                    Snackbar.make(view, getString(R.string.refresh_busposinfo_data), Snackbar.LENGTH_SHORT)
+                            .setAction("Action", null).show();
+                }
+            });
+        }
 
         mHeaderView = findViewById(R.id.header);
         HeaderContentsView = mHeaderView.findViewById(R.id.header_contents);
@@ -102,49 +128,39 @@ public class BeaconActivity extends AppCompatActivity{
         mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, themeColor));
         setSupportActionBar(mToolbarView);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // 뒤로가기 아이콘 표시
-
-        // 플로팅액션버튼 설정
-        FloatingActionButton refreshBtn = (FloatingActionButton) findViewById(R.id.refresh);
-        refreshBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                GetBusPosAsyncTask getBusPosAsyncTask = new GetBusPosAsyncTask();
-                getBusPosAsyncTask.execute(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(), mBeaconArrInfo.getBusId());
-
-                Snackbar.make(view, getString(R.string.refresh_busposinfo_data), Snackbar.LENGTH_SHORT)
-                        .setAction("Action", null).show();
-            }
-        });
     }
 
     private void setAdapter() {
         mListAdapter = new BeaconListAdapter(this, mBeaconArrInfo.getBusStops(), mRealm,
                 mBeaconArrInfo.getMRoute().getType(), mBeaconArrInfo.getBusId(),
                 mBeaconArrInfo.getStartIndex(), mBeaconArrInfo.getDestIndex());
-        mListAdapter.setBusDestListener(new BeaconBusDestListener() {
-            @Override
-            public void onChangeBusDest(String text, int destIndex) {
-                setDestTextView(text);
-
-                // destIndex가 -1일 때
-                if( destIndex == -1 ) {
-                    String contentTitle = String.format(getString(R.string.noti_title), mBeaconArrInfo.getMRoute().getNo());
-                    String contentText = String.format(getString(R.string.noti_text_show_dest), text);
-                    OdegoApplication.createNotification(getBaseContext(), contentTitle, contentText);
-                    if( mBeaconArrInfo.getDestIndex() != -1 )
-                        RealmTransaction.deleteDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, mHandler);
-                    return;
-                }
-
-                // destIndex가 -1이 아닐 때
-                if( mBeaconArrInfo.getDestIndex() == -1 ) {
-                    mNotiReqMsg.setDestIndex(destIndex);
-                    RealmTransaction.createDestIndex(mRealm, mBeaconArrInfo.getIndex(), mNotiReqMsg, mHandler);
-                } else
-                    RealmTransaction.modifyDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, destIndex, mHandler);
-            }
-        });
         mListView.setAdapter(mListAdapter);
+
+        if( isEditable ) {
+            mListAdapter.setBusDestListener(new BeaconBusDestListener() {
+                @Override
+                public void onChangeBusDest(String text, int destIndex) {
+                    setDestTextView(text);
+
+                    // destIndex가 -1일 때
+                    if (destIndex == -1) {
+                        String contentTitle = String.format(getString(R.string.noti_title), mBeaconArrInfo.getMRoute().getNo());
+                        String contentText = String.format(getString(R.string.noti_text_show_dest), text);
+                        OdegoApplication.createNotification(getBaseContext(), contentTitle, contentText);
+                        if (mBeaconArrInfo.getDestIndex() != -1)
+                            RealmTransaction.deleteDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, mHandler);
+                        return;
+                    }
+
+                    // destIndex가 -1이 아닐 때
+                    if (mBeaconArrInfo.getDestIndex() == -1) {
+                        mNotiReqMsg.setDestIndex(destIndex);
+                        RealmTransaction.createDestIndex(mRealm, mBeaconArrInfo.getIndex(), mNotiReqMsg, mHandler);
+                    } else
+                        RealmTransaction.modifyDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, destIndex, mHandler);
+                }
+            });
+        }
     }
 
 
@@ -158,6 +174,9 @@ public class BeaconActivity extends AppCompatActivity{
         headerRouteType.setText(mBeaconArrInfo.getMRoute().getType());
         headerRouteName.setText(mBeaconArrInfo.getMRoute().getNo());
         headerBusIdNo.setText(mBeaconArrInfo.getBusId());
+        int destIndex = mBeaconArrInfo.getDestIndex();
+        if( destIndex != -1 )
+            busDest.setText( mBeaconArrInfo.getBusStops().get(destIndex).getName() );
     }
 
     public void setDestTextView(CharSequence dest) {
@@ -172,6 +191,7 @@ public class BeaconActivity extends AppCompatActivity{
             mRealm.close();
     }
 
+    // 현재 버스 위치 얻는 AsyncTask
     private class GetBusPosAsyncTask extends AsyncTask<Object, String, Integer> {
         @Override
         protected void onPreExecute() {
