@@ -183,12 +183,20 @@ public class ExampleUnitTest {
     @Test
     public void exceptionTest() throws Exception {
 
-        String url = "http://bhi.iptime.org:1313" + "/routes/1000001000/buspos?isforward=true&busid=%EB%8C%80%EA%B5%AC70%EC%9E%90%202824";
+        String url = "http://bhi.iptime.org:1313/beacons/24DDF4118CF1440C87CDE368DAF9C9DE/501/18483/busposinfos";
         Request request = new Request.Builder()
                 .url(url)
                 .build();
         Response response = client.newCall(request).execute();
         if (!response.isSuccessful()) throw new IOException("response fail");
         System.out.println(response.body().string());
+        Gson gson = new Gson();
+        if( response.body() == null )
+            System.out.println("body null");
+        else
+            System.out.println("body not null");
+        /*
+        BeaconArrInfoResMsg mBeaconArrInfoResMsg = gson.fromJson(response.body().charStream(), BeaconArrInfoResMsg.class);
+        System.out.println(mBeaconArrInfoResMsg.getBusId());*/
     }
 }

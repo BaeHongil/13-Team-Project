@@ -200,7 +200,8 @@ public class BeaconService extends Service implements RECOServiceConnectListener
 
     @Override
     public void didDetermineStateForRegion(RECOBeaconRegionState recoBeaconRegionState, RECOBeaconRegion recoBeaconRegion) {
-        if(firstState == true) {
+        Log.i(getClass().getSimpleName(), recoBeaconRegionState.name());
+        if( firstState ) {
             if(recoBeaconRegionState == RECOBeaconRegionState.RECOBeaconRegionOutside)
                 firstState = false;
             else if(recoBeaconRegionState == RECOBeaconRegionState.RECOBeaconRegionInside) {
@@ -278,6 +279,7 @@ public class BeaconService extends Service implements RECOServiceConnectListener
             try {
                 Response response = client.newCall(request).execute();
                 if (!response.isSuccessful()) throw new IOException("response fail");
+                if ( response.code() == 404 ) return false;
 
                 Log.i("Thread", response.toString() +" "+ response.body());
 
@@ -307,7 +309,12 @@ public class BeaconService extends Service implements RECOServiceConnectListener
 
                 mRealm.commitTransaction();
 
-                createNotification( String.format(getString(R.string.noti_contentTitle), mRoute.getNo()) );
+                String contentTitle = String.format(getString(R.string.noti_title), mRoute.getNo());
+                String contentText = getString(R.string.noti_text_setup_dest);
+                long[] vibrate = new long[]{0, 1000, 500, 1000};
+                OdegoApplication.createNotification( getBaseContext(), contentTitle, contentText, vibrate );
+
+                return true;
             } catch (IOException e) {
                 publishProgress( getString(R.string.network_error_msg) );
             } finally {
@@ -315,17 +322,12 @@ public class BeaconService extends Service implements RECOServiceConnectListener
                     mRealm.close();
             }
 
-            return null;
+            return false;
         }
 
         @Override
         protected void onProgressUpdate(String... values) {
             Toast.makeText(getBaseContext(), values[0], Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        protected void onPostExecute(Boolean aBoolean) {
-            super.onPostExecute(aBoolean);
         }
     }
 
@@ -333,7 +335,7 @@ public class BeaconService extends Service implements RECOServiceConnectListener
         NotificationCompat.Builder mBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.logo)
                 .setContentTitle( contentTitle )
-                .setContentText( getString(R.string.setup_destinatioin) )
+                .setContentText( getString(R.string.noti_text_setup_dest) )
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVibrate( new long[]{0, 1000, 500, 1000} );
         Intent notifyIntent = new Intent(this, BeaconActivity.class);

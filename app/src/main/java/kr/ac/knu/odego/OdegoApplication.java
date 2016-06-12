@@ -1,7 +1,11 @@
 package kr.ac.knu.odego;
 
 import android.app.Application;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.support.v7.app.NotificationCompat;
 
 import com.facebook.stetho.Stetho;
 import com.facebook.stetho.okhttp3.StethoInterceptor;
@@ -11,6 +15,7 @@ import java.util.Date;
 
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
+import kr.ac.knu.odego.activity.BeaconActivity;
 import okhttp3.OkHttpClient;
 
 /**
@@ -79,5 +84,32 @@ public class OdegoApplication extends Application {
                 || today.getDate() > date.getDate() );
     }
 
+    public static void createNotification(Context mContext, String contentTitle, String contentText) {
+        createNotification( mContext, contentTitle, contentText, null );
+    }
 
+    public static void createNotification(Context mContext, String contentTitle, String contentText, long[] vibrate ) {
+        NotificationCompat.Builder mBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(mContext)
+                .setSmallIcon(R.drawable.logo)
+                .setContentTitle( contentTitle )
+                .setContentText( contentText )
+                .setPriority(NotificationCompat.PRIORITY_MAX);
+        if( vibrate != null )
+            mBuilder.setVibrate( vibrate );
+        Intent notifyIntent = new Intent(mContext, BeaconActivity.class);
+        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        PendingIntent notifyPendingIntent =
+                PendingIntent.getActivity(
+                        mContext,
+                        0,
+                        notifyIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                );
+        mBuilder.setContentIntent(notifyPendingIntent);
+
+        NotificationManager mNotificationManager =
+                (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(mContext.getResources().getInteger(R.integer.notification_id), mBuilder.build());
+    }
 }
