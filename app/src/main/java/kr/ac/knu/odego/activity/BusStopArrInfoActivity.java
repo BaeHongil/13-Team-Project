@@ -212,7 +212,7 @@ public class BusStopArrInfoActivity extends ObsvBaseActivity {
 
         @Override
         protected void onProgressUpdate(String... values) {
-            Toast.makeText(getBaseContext(), values[0], Toast.LENGTH_LONG);
+            Toast.makeText(getBaseContext(), values[0], Toast.LENGTH_LONG).show();
         }
 
         @Override

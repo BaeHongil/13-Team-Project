@@ -1,9 +1,12 @@
 package kr.ac.knu.odego.activity;
 
 import android.bluetooth.BluetoothAdapter;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
@@ -30,7 +33,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import io.realm.Realm;
-import io.realm.RealmResults;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.fragment.BusStopSearchFragment;
@@ -39,15 +41,18 @@ import kr.ac.knu.odego.fragment.RouteSearchFragment;
 import kr.ac.knu.odego.fragment.TheOtherFragment;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Route;
+import kr.ac.knu.odego.service.BeaconService;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
-    private SectionsPagerAdapter mSectionsPagerAdapter;
     private CoordinatorLayout mContentsLayout;
     private ViewPager mViewPager;
     private BluetoothAdapter mBtAdapter;
 
     private Realm mRealm;
+
+    private BeaconService mBeaconService;
+    private boolean mBound = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +67,7 @@ public class MainActivity extends AppCompatActivity
 
         mContentsLayout = (CoordinatorLayout) findViewById(R.id.contents_layout);
         // fragment 탭 페이지 설정
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+        SectionsPagerAdapter mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
         mSectionsPagerAdapter.addFragment(new FavoriteFragment(), getString(R.string.page_title_0));
         mSectionsPagerAdapter.addFragment(new RouteSearchFragment(), getString(R.string.page_title_1));
         mSectionsPagerAdapter.addFragment(new BusStopSearchFragment(), getString(R.string.page_title_2));
@@ -96,17 +101,24 @@ public class MainActivity extends AppCompatActivity
         // 블루투스 어뎁터 설정
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        // Realm 설정
+        // realm 초기화
         mRealm = Realm.getDefaultInstance();
+
         // Parser로 DB 생성
         new DataBaseCreateAsyncTask().execute();
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-    //    Parser.getInstance().closeRealm();
-        mRealm.close();
+        if( mRealm != null )
+            mRealm.close();
+        if( mBound ) {
+            mBeaconService.setTimeOut(5 * 60 * 1000L);
+            unbindService(mConnection);
+            mBound = false;
+        }
     }
 
     /**
@@ -171,7 +183,6 @@ public class MainActivity extends AppCompatActivity
     /**
      * 좌측 네비게이션메뉴 핸들러
      */
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -195,19 +206,8 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    public void clearHistory() {
-        mRealm.executeTransactionAsync(new Realm.Transaction() {
-            @Override
-            public void execute(Realm realm) {
-                RealmResults<BusStop> busStopResults = realm.where(BusStop.class).findAll();
-                for( BusStop mBusStop : busStopResults )
-                    mBusStop.setHistoryIndex(0);
-                RealmResults<Route> RouteResults = realm.where(Route.class).findAll();
-                for( Route mRoute : RouteResults )
-                    mRoute.setHistoryIndex(0);
-            }
-        });
-    }
+
+    /* 내부 클래스 시작 */
 
     /**
      * Fragement Page 어뎁터
@@ -297,10 +297,16 @@ public class MainActivity extends AppCompatActivity
                 mContentsLayout.removeView( mContentsLayout.findViewById(R.id.progress_layout) );
                 mViewPager.setVisibility(View.VISIBLE);
             }
+
+            if( mBtAdapter != null ) {
+                Intent intent = new Intent(getBaseContext(), BeaconService.class);
+                startService(intent);
+                bindService(intent, mConnection, BIND_AUTO_CREATE);
+            }
         }
     }
 
-
+    // 버스DB 생성 Callable
     private class CreateBusDbCallable implements Callable<Void> {
         @Override
         public Void call() throws Exception {
@@ -316,4 +322,19 @@ public class MainActivity extends AppCompatActivity
             return null;
         }
     }
+
+    // 서비스 연결
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            BeaconService.MyBinder binder = (BeaconService.MyBinder) service;
+            mBeaconService = binder.getService();
+            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mBound = false;
+        }
+    };
 }

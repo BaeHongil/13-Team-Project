@@ -2,12 +2,12 @@ package kr.ac.knu.odego;
 
 import com.google.gson.Gson;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
-import java.util.Date;
 
 import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
@@ -22,6 +22,10 @@ import okhttp3.Response;
  */
 public class ExampleUnitTest {
     OkHttpClient client = new OkHttpClient();
+
+    @Before
+    public void Before() {
+    }
     /**
      * Get the method name.
      *
@@ -177,9 +181,14 @@ public class ExampleUnitTest {
     }
 
     @Test
-    public void exceptionTest() {
-        Date date = new Date();
-        date.getDate();
-        System.out.println(date.toString() + true);
+    public void exceptionTest() throws Exception {
+
+        String url = "http://bhi.iptime.org:1313" + "/routes/1000001000/buspos?isforward=true&busid=%EB%8C%80%EA%B5%AC70%EC%9E%90%202824";
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        Response response = client.newCall(request).execute();
+        if (!response.isSuccessful()) throw new IOException("response fail");
+        System.out.println(response.body().string());
     }
 }

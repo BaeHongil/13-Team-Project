@@ -3,28 +3,33 @@ package kr.ac.knu.odego.activity;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.ksoichiro.android.observablescrollview.ScrollUtils;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.io.IOException;
 
 import io.realm.Realm;
-import kr.ac.knu.odego.OdegoApplication;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.BeaconListAdapter;
 import kr.ac.knu.odego.common.Parser;
+import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.common.RouteType;
-import kr.ac.knu.odego.interfaces.BeaconSetGoalListener;
-import kr.ac.knu.odego.item.BusPosInfo;
-import kr.ac.knu.odego.item.BusStop;
-import kr.ac.knu.odego.item.Route;
+import kr.ac.knu.odego.interfaces.BeaconBusDestListener;
+import kr.ac.knu.odego.item.BeaconArrInfo;
+import kr.ac.knu.odego.item.NotiReqMsg;
 
 /**
  * Created by Brick on 2016-06-09.
@@ -33,29 +38,20 @@ public class BeaconActivity extends AppCompatActivity{
 
     private View mHeaderView;
     private View HeaderContentsView;
-    private View mListBackgroundView;
+    private Toolbar mToolbarView;;
     private ListView mListView;
-    private Toolbar mToolbarView;
     private BeaconListAdapter mListAdapter;
-
-    private TextView bus_goal;
+    private TextView busDest;
 
     private Parser mParser = Parser.getInstance();
     private Realm mRealm;
-    private Route mRoute;
-    private String routeId = "3000306000";
-    private BusStop[] busStops;
-
-    private String busIdNo = "1018";
+    private BeaconArrInfo mBeaconArrInfo;
+    private LinearLayout progressLayout;
 
     private int themeColor;
-    private boolean isForward = true;
-    private BusPosInfo[] busPosInfos;
-
-    private int presentPosition=-1;
-
-
-    BeaconSetGoalListener beaconSetGoalListener;
+    private String fcmToken = FirebaseInstanceId.getInstance().getToken();
+    private Handler mHandler = new BeaconActivityHandler();
+    private NotiReqMsg mNotiReqMsg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,36 +59,28 @@ public class BeaconActivity extends AppCompatActivity{
         setContentView(R.layout.activity_beacon);
 
         mRealm = Realm.getDefaultInstance();
-        routeId = getIntent().getExtras().getString("routeId");
-        mRoute = mRealm.where(Route.class).equalTo("id", routeId).findFirst();
+        int beaconArrInfoIndex = mRealm.where(BeaconArrInfo.class).max("index").intValue();
+        mBeaconArrInfo = mRealm.where(BeaconArrInfo.class).equalTo("index", beaconArrInfoIndex).findFirst();
+        mNotiReqMsg = new NotiReqMsg(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(),
+                mBeaconArrInfo.getBusId(), mBeaconArrInfo.getDestIndex(), 2, fcmToken);
 
-        mListView = (ListView) findViewById(R.id.list);
-
-        beaconSetGoalListener = new BeaconSetGoalListener() {
-            @Override
-            public void setGoalTextView(String text) {
-                setGoal(text);
-            }
-        };
+        // 프로그레스바 레이아웃 얻기
+        progressLayout = (LinearLayout) findViewById(R.id.progress_layout);
+        TextView progressText = (TextView) findViewById(R.id.progress_text);
+        progressText.setText(R.string.refreshing_busposinfo_data);
 
         // 도착정보 얻기
-        GetBusPosInfoAsyncTask getBusPosinfoAsyncTask = new GetBusPosInfoAsyncTask();
-        getBusPosinfoAsyncTask.execute(isForward);
+        mListView = (ListView) findViewById(R.id.list);
+        setAdapter();
+        GetBusPosAsyncTask getBusPosAsyncTask = new GetBusPosAsyncTask();
+        getBusPosAsyncTask.execute(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(), mBeaconArrInfo.getBusId());
 
         mHeaderView = findViewById(R.id.header);
         HeaderContentsView = mHeaderView.findViewById(R.id.header_contents);
-        // 현재 노선상세정보 있는지 확인후 노선정보 등록
-        if( mRoute.getUpdatedDetail() != null && OdegoApplication.isToday( mRoute.getUpdatedDetail() ) )
-            setHeaderData();
-        else {
-            GetRouteDetailInfoAsyncTask getRouteDetailInfoAsyncTask = new GetRouteDetailInfoAsyncTask();
-            getRouteDetailInfoAsyncTask.execute();
-        }
-
-
+        setHeaderData();
 
         // 테마색상 노선유형에 따라 설정
-        String routeType = mRoute.getType();
+        String routeType = mBeaconArrInfo.getMRoute().getType();
         if (RouteType.MAIN.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.main_bus);
         else if (RouteType.BRANCH.getName().equals( routeType ))
@@ -107,48 +95,67 @@ public class BeaconActivity extends AppCompatActivity{
         mHeaderView.setBackgroundColor(themeColor);
 
         mToolbarView = (Toolbar)findViewById(R.id.toolbar);
-        mToolbarView.setTitle(" ");
+        mToolbarView.setTitle("");
         mToolbarView.bringToFront();
         // 툴바 색상 설정
         mToolbarView.setBackgroundColor(ScrollUtils.getColorWithAlpha(0, themeColor));
         setSupportActionBar(mToolbarView);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // 뒤로가기 아이콘 표시
 
+        // 플로팅액션버튼 설정
+        FloatingActionButton refreshBtn = (FloatingActionButton) findViewById(R.id.refresh);
+        refreshBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                GetBusPosAsyncTask getBusPosAsyncTask = new GetBusPosAsyncTask();
+                getBusPosAsyncTask.execute(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(), mBeaconArrInfo.getBusId());
 
-        // mListBackgroundView makes ListView's background except header view.
-        mListBackgroundView = findViewById(R.id.list_background);
-
-        setAdapter();
-
+                Snackbar.make(view, getString(R.string.refresh_busposinfo_data), Snackbar.LENGTH_SHORT)
+                        .setAction("Action", null).show();
+            }
+        });
     }
 
-    private void setAdapter()
-    {
-        mListAdapter = new BeaconListAdapter(this, mRealm, mRoute.getType(), busIdNo, presentPosition);
+    private void setAdapter() {
+        mListAdapter = new BeaconListAdapter(this, mBeaconArrInfo.getBusStops(), mRealm,
+                mBeaconArrInfo.getMRoute().getType(), mBeaconArrInfo.getBusId(),
+                mBeaconArrInfo.getStartIndex(), mBeaconArrInfo.getDestIndex());
+        mListAdapter.setBusDestListener(new BeaconBusDestListener() {
+            @Override
+            public void onChangeBusDest(String text, int destIndex) {
+                setDestTextView(text);
+
+                // destIndex가 -1일 때
+                if( destIndex == -1 ) {
+                    if( mBeaconArrInfo.getDestIndex() != -1 )
+                        RealmTransaction.deleteDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, mHandler);
+                    return;
+                }
+
+                // destIndex가 -1이 아닐 때
+                if( mBeaconArrInfo.getDestIndex() == -1 ) {
+                    mNotiReqMsg.setDestIndex(destIndex);
+                    RealmTransaction.createDestIndex(mRealm, mBeaconArrInfo.getIndex(), mNotiReqMsg, mHandler);
+                } else
+                    RealmTransaction.modifyDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, destIndex, mHandler);
+            }
+        });
         mListView.setAdapter(mListAdapter);
-        mListAdapter.setSetGoalListener(beaconSetGoalListener);
-
     }
-
-
 
     private void setHeaderData() {
-
         TextView headerRouteType = (TextView) HeaderContentsView.findViewById(R.id.route_type);
         TextView headerRouteName = (TextView) HeaderContentsView.findViewById(R.id.route_name);
         TextView headerBusIdNo = (TextView) HeaderContentsView.findViewById(R.id.bus_id_no);
-        bus_goal = (TextView) findViewById( R.id.bus_goal );
+        busDest = (TextView) findViewById( R.id.bus_goal );
 
-
-        headerRouteType.setText(mRoute.getType());
-        headerRouteName.setText(mRoute.getNo());
-        headerBusIdNo.setText(busIdNo);
-
+        headerRouteType.setText(mBeaconArrInfo.getMRoute().getType());
+        headerRouteName.setText(mBeaconArrInfo.getMRoute().getNo());
+        headerBusIdNo.setText(mBeaconArrInfo.getBusId());
     }
 
-    public void setGoal(CharSequence goal)
-    {
-        bus_goal.setText( goal );
+    public void setDestTextView(CharSequence dest) {
+        busDest.setText( dest );
     }
 
     @Override
@@ -159,88 +166,23 @@ public class BeaconActivity extends AppCompatActivity{
             mRealm.close();
     }
 
-
-
-
-    private class GetBusPosInfoAsyncTask extends AsyncTask<Boolean, String, BusPosInfo[]> {
+    private class GetBusPosAsyncTask extends AsyncTask<Object, String, Integer> {
+        @Override
+        protected void onPreExecute() {
+            mListView.setVisibility(View.GONE);
+            progressLayout.setVisibility(View.VISIBLE);
+        }
 
         @Override
-        protected BusPosInfo[] doInBackground(Boolean... params) {
-            boolean isForward = params[0];
+        protected Integer doInBackground(Object... params) {
+            String routeId = (String) params[0];
+            Boolean isForward = (Boolean) params[1];
+            String busId = (String) params[2];
             try {
-                busPosInfos = mParser.getBusPosInfos(routeId, isForward);
-
-                // 포지션 정하기
-                String busNums = null;
-                String busIdNm = null;
-                for (int i = 0; i < busPosInfos.length; i++) {
-                    if (busPosInfos[i].getBusId() != null) {
-                        busNums = busPosInfos[i].getBusId().toString();
-                        busIdNm = busNums.substring(busNums.length() - 4, busNums.length());
-                        if (busIdNm.equals(busIdNo)) {
-                            presentPosition = i;
-                            break;
-                        }
-                    }
-                }
-
-
-
-                return busPosInfos;
+                int curIndex = mParser.getBusPosByBusId(routeId, isForward, busId);
+                return curIndex;
             } catch (IOException e) {
                 publishProgress( getString(R.string.network_error_msg) );
-            }
-
-
-
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(String... values) {
-            Toast.makeText(getBaseContext(), values[0], Toast.LENGTH_LONG);
-        }
-
-        @Override
-        protected void onPostExecute(BusPosInfo[] busPosInfos) {
-            if (busPosInfos == null)
-                return;
-
-            if (busStops == null) { // 버스정류장의 노선들 정보가 없을 때
-                busStops = new BusStop[busPosInfos.length];
-                for (int i = 0; i < busPosInfos.length; i++) {
-                    BusPosInfo busPosInfo = busPosInfos[i];
-                    String busStopId = busPosInfo.getBusStopId();
-                    BusStop mBusStop = mRealm.where(BusStop.class).equalTo("id", busStopId).findFirst();
-
-                    busStops[i] = mBusStop;
-                    busPosInfo.setMBusStop(mBusStop);
-                }
-            } else {
-                for (int i = 0; i < busPosInfos.length; i++)
-                    busPosInfos[i].setMBusStop(busStops[i]);
-            }
-
-            mListAdapter.setBusPosInfos(busPosInfos, presentPosition);
-            mListAdapter.notifyDataSetChanged();
-            mListView.setSelection(presentPosition);
-
-        }
-    }
-
-    private class GetRouteDetailInfoAsyncTask extends AsyncTask<Void, String, Route> {
-
-        @Override
-        protected Route doInBackground(Void... params) {
-            Realm mRealm = null;
-            try {
-                mRealm = Realm.getDefaultInstance();
-                mParser.getRouteDetailInfo(mRealm, routeId);
-            } catch (IOException e) {
-                publishProgress( getString(R.string.network_error_msg) );
-            } finally {
-                if(mRealm != null)
-                    mRealm.close();
             }
 
             return null;
@@ -252,11 +194,22 @@ public class BeaconActivity extends AppCompatActivity{
         }
 
         @Override
-        protected void onPostExecute(Route route) {
-            setHeaderData();
+        protected void onPostExecute(Integer curIndex) {
+            if( curIndex != null ) {
+                mListAdapter.setCurIndex(curIndex);
+
+                progressLayout.setVisibility(View.GONE);
+                mListView.setSelection(curIndex - 2);
+                mListView.setVisibility(View.VISIBLE);
+            }
         }
     }
 
-
-
+    private class BeaconActivityHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            String text = (String) msg.obj;
+            Toast.makeText(getBaseContext(), text, Toast.LENGTH_LONG);
+        }
+    }
 }

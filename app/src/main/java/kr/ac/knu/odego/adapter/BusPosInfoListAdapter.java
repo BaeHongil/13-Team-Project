@@ -3,9 +3,7 @@ package kr.ac.knu.odego.adapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.BitmapFactory;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +11,6 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
-
-import javax.annotation.Resource;
 
 import io.realm.Realm;
 import kr.ac.knu.odego.R;
@@ -112,16 +108,12 @@ public class BusPosInfoListAdapter extends BaseAdapter {
             viewHolder.busStopId = mBusStop.getId();
         }
 
-
-
         if( mRealm.where(Favorite.class).equalTo("mBusStop.id", mBusStop.getId()).count() > 0 )
             viewHolder.favoriteBtn.setChecked(true);
         else
             viewHolder.favoriteBtn.setChecked(false);
         viewHolder.busStopName.setText(mBusStop.getName());
         viewHolder.busStopNo.setText(mBusStop.getNo());
-
-
 
 
         // 버스가 없을 때

@@ -19,10 +19,13 @@ import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.item.ArrInfo;
 import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
+import kr.ac.knu.odego.item.NotiReqMsg;
 import kr.ac.knu.odego.item.Route;
 import kr.ac.knu.odego.item.RouteArrInfo;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class Parser {
@@ -602,6 +605,92 @@ public class Parser {
             }
         }
         return busPosInfos;
+    }
+
+    /**
+     * 버스ID로 현재 버스의 index를 알아냅니다
+     *
+     * @param routeId   Route Id
+     * @param isForward 정방향이면 true, 역방향이면 false
+     * @param busId     Bus Id
+     * @return 버스 위치 index
+     * @throws IOException 네트워크 오류 발생 try-catch로 UI스레드에서 처리요망
+     */
+    public int getBusPosByBusId(String routeId, boolean isForward, String busId) throws IOException {
+        if( isAppServer() ) {
+            String url = appServerDomain + "/routes/" + routeId + "/buspos"
+                    + "?isforward=" + isForward + "&busid=" + busId;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+            Response response = client.newCall(request).execute();
+            if (!response.isSuccessful()) throw new IOException("response fail");
+
+            int foundIndex = Integer.parseInt( response.body().string() );
+            return foundIndex;
+        }
+
+        return -1;
+    }
+
+    /**
+     * 버스도착알림을 서버에 요청
+     *
+     * @param mNotiReqMsg 요청메시지 객체
+     * @throws IOException 네트워크 오류 발생 try-catch로 UI스레드에서 처리요망
+     */
+    public void sendNotiReqMsg(NotiReqMsg mNotiReqMsg) throws IOException {
+        if( isAppServer() ) {
+            String url = appServerDomain + "/notifications/busarr";
+            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+            RequestBody requestBody = RequestBody.create(JSON, gson.toJson(mNotiReqMsg));
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(requestBody)
+                    .build();
+            Response response = client.newCall(request).execute();
+            if (!response.isSuccessful()) throw new IOException("response fail");
+        }
+    }
+
+    /**
+     * 버스도착정류장 수정을 서버에 요청
+     *
+     * @param fcmToken  FCM 토큰
+     * @param destIndex 수정할 도착정류장 index
+     * @throws IOException 네트워크 오류 발생 try-catch로 UI스레드에서 처리요망
+     */
+    public void sendNotiModMsg(String fcmToken, int destIndex) throws IOException {
+        if ( isAppServer() ) {
+            String url = appServerDomain + "/notifications/busarr/" + fcmToken
+                    + "/" + destIndex;
+            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+            RequestBody requestBody = RequestBody.create(JSON, "{\"destIndex\":" + destIndex + "}");
+            Request request = new Request.Builder()
+                    .url(url)
+                    .put(requestBody)
+                    .build();
+            Response response = client.newCall(request).execute();
+            if (!response.isSuccessful()) throw new IOException("response fail");
+        }
+    }
+
+    /**
+     * 이전 버스도착알림 삭제를 서버에 요청
+     *
+     * @param fcmToken FCM 토큰
+     * @throws IOException 네트워크 오류 발생 try-catch로 UI스레드에서 처리요망
+     */
+    public void sendNotiDelMsg(String fcmToken) throws IOException {
+        if( isAppServer() ) {
+            String url = appServerDomain + "/notifications/busarr/" + fcmToken;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .delete()
+                    .build();
+            Response response = client.newCall(request).execute();
+            if (!response.isSuccessful()) throw new IOException("response fail");
+        }
     }
 
 /*

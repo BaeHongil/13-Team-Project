@@ -1,11 +1,17 @@
 package kr.ac.knu.odego.service;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.Gson;
@@ -20,13 +26,20 @@ import com.perples.recosdk.RECOServiceConnectListener;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import io.realm.Realm;
+import io.realm.RealmList;
 import kr.ac.knu.odego.OdegoApplication;
 import kr.ac.knu.odego.R;
+import kr.ac.knu.odego.activity.BeaconActivity;
 import kr.ac.knu.odego.item.BeaconArrInfo;
+import kr.ac.knu.odego.item.BeaconArrInfoResMsg;
+import kr.ac.knu.odego.item.BusStop;
+import kr.ac.knu.odego.item.Route;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -153,49 +166,8 @@ public class BeaconService extends Service implements RECOServiceConnectListener
             }
         }
 
-        final String UUID = nearBeacon.getProximityUuid();
-        final int major = nearBeacon.getMajor();
-        final int minor = nearBeacon.getMinor();
-        executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                Log.i(OdegoApplication.getMethodName(Thread.currentThread().getStackTrace()), UUID + " " + major + " " + minor);
-                String url = appServerDomain + "/beacons/" + UUID + "/" + major + "/" + minor + "/busposinfos";
-                Request request = new Request.Builder()
-                        .url(url)
-                        .build();
-                try {
-                    Response response = client.newCall(request).execute();
-                    if (!response.isSuccessful()) throw new IOException("response fail");
-
-                    Log.i("Thread", response.toString() +" "+ response.body());
-
-                    Gson gson = new Gson();
-                    BeaconArrInfo mBeaconArrInfo = gson.fromJson(response.body().charStream(), BeaconArrInfo.class);
-                    /* 도착할 버스정류장 선택 액티비티 부르기 */
-                    /*Intent intent = new Intent(this, MainActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);*/
-                    /*NotiRequestMsg mNotiRequestMsg = new NotiRequestMsg(mBeaconArrInfo.getRouteId(),
-                            mBeaconArrInfo.isForward(),
-                            mBeaconArrInfo.getBusId(),
-                            72,
-                            2,
-                            fcmToken);
-
-                    final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-                    RequestBody body = RequestBody.create(JSON, gson.toJson(mNotiRequestMsg));
-                    request = new Request.Builder()
-                            .url("http://bhi.iptime.org:1313/notifyarrival")
-                            .post(body)
-                            .build();
-                    response = client.newCall(request).execute();
-                    Log.i("Thread", response.body().string());*/
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        SendBeaconData sendBeaconData = new SendBeaconData();
+        sendBeaconData.execute(nearBeacon);
     }
 
     /* RECOServiceConnectListener 메소드들 시작 */
@@ -281,8 +253,103 @@ public class BeaconService extends Service implements RECOServiceConnectListener
 
 
     public class MyBinder extends Binder {
-        BeaconService getService() {
+        public BeaconService getService() {
             return BeaconService.this;
         }
+    }
+
+    private class SendBeaconData extends AsyncTask<RECOBeacon, String, Boolean> {
+
+        @Override
+        protected Boolean doInBackground(RECOBeacon... params) {
+            RECOBeacon beacon = params[0];
+
+            Log.i(OdegoApplication.getMethodName(Thread.currentThread().getStackTrace()),
+                    beacon.getProximityUuid() + " " + beacon.getMajor() + " " + beacon.getMinor());
+            String url = appServerDomain + "/beacons/"
+                    + beacon.getProximityUuid()
+                    + "/" + beacon.getMajor()
+                    + "/" + beacon.getMinor()
+                    + "/busposinfos";
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+            Realm mRealm = null;
+            try {
+                Response response = client.newCall(request).execute();
+                if (!response.isSuccessful()) throw new IOException("response fail");
+
+                Log.i("Thread", response.toString() +" "+ response.body());
+
+                Gson gson = new Gson();
+                BeaconArrInfoResMsg mBeaconArrInfoResMsg = gson.fromJson(response.body().charStream(), BeaconArrInfoResMsg.class);
+
+                mRealm = Realm.getDefaultInstance();
+                mRealm.beginTransaction();
+                BeaconArrInfo mBeaconArrInfo = new BeaconArrInfo(mBeaconArrInfoResMsg);
+                Number maxIndex = mRealm.where(BeaconArrInfo.class).max("index");
+                int index;
+                if( maxIndex == null )
+                    index = 0;
+                else
+                    index = maxIndex.intValue() + 1;
+                mBeaconArrInfo.setIndex( index );
+                mBeaconArrInfo.setUpdated( new Date() );
+
+                mBeaconArrInfo = mRealm.copyToRealm(mBeaconArrInfo);
+                Route mRoute = mRealm.where(Route.class).equalTo( "id", mBeaconArrInfoResMsg.getRouteId() ).findFirst();
+                mBeaconArrInfo.setMRoute( mRoute );
+                RealmList<BusStop> busStops = mBeaconArrInfo.getBusStops();
+                for( String busStopId : mBeaconArrInfoResMsg.getBusStopIds() ) {
+                    BusStop mBusStop = mRealm.where(BusStop.class).equalTo("id", busStopId ).findFirst();
+                    busStops.add( mBusStop );
+                }
+
+                mRealm.commitTransaction();
+
+                createNotification( String.format(getString(R.string.noti_contentTitle), mRoute.getNo()) );
+            } catch (IOException e) {
+                publishProgress( getString(R.string.network_error_msg) );
+            } finally {
+                if( mRealm != null )
+                    mRealm.close();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            Toast.makeText(getBaseContext(), values[0], Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            super.onPostExecute(aBoolean);
+        }
+    }
+
+    private void createNotification(String contentTitle) {
+        NotificationCompat.Builder mBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.logo)
+                .setContentTitle( contentTitle )
+                .setContentText( getString(R.string.setup_destinatioin) )
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setVibrate( new long[]{0, 1000, 500, 1000} );
+        Intent notifyIntent = new Intent(this, BeaconActivity.class);
+        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        PendingIntent notifyPendingIntent =
+                PendingIntent.getActivity(
+                        this,
+                        0,
+                        notifyIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                );
+        mBuilder.setContentIntent(notifyPendingIntent);
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        mNotificationManager.notify(getResources().getInteger(R.integer.notification_id), mBuilder.build());
     }
 }

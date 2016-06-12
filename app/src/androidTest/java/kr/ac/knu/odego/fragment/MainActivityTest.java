@@ -25,6 +25,7 @@ import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import kr.ac.knu.odego.activity.MainActivity;
 import kr.ac.knu.odego.common.Parser;
+import kr.ac.knu.odego.item.BeaconArrInfo;
 import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.Route;
 
@@ -50,11 +51,11 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
         activity = getActivity();
         mParser = Parser.getInstance();
 
-        busDBRealmConfig = new RealmConfiguration.Builder(activity)
-                .name("busdb.realm")
+       /* busDBRealmConfig = new RealmConfiguration.Builder(activity)
+                .name("bus_info.realm")
                 .build();
-        Realm.setDefaultConfiguration(busDBRealmConfig);
-        mRealm = Realm.getInstance(busDBRealmConfig);
+        Realm.setDefaultConfiguration(busDBRealmConfig);*/
+        mRealm = Realm.getDefaultInstance();
     }
 
     @After
@@ -68,7 +69,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
     public void realmTest() throws Exception {
         String methodName = "realmTest";
         RealmConfiguration busDBRealmConfig = new RealmConfiguration.Builder(activity)
-                .name("busdb.realm")
+                .name("b.realm")
                 .build();
 
         Realm.setDefaultConfiguration(busDBRealmConfig);
@@ -134,7 +135,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
         Log.i(methodName, "배차간격(휴일)" + mRoute.getIntervalSun());
     }
 
-    @Test
+    @Ignore
     public void getRoute() throws Exception {
         Parser mParser = Parser.getInstance();
 
@@ -156,5 +157,17 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
         Route mRoute = future.get();
 
         Log.i("getRouteTest", mRoute.getNo());
+    }
+
+    @Test
+    public void parcelsTest() throws Exception {
+        mRealm.executeTransactionAsync(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                BeaconArrInfo mBeaconArrInfo = new BeaconArrInfo();
+                mBeaconArrInfo.setIndex(5);
+                realm.copyToRealm(mBeaconArrInfo);
+            }
+        });
     }
 }
