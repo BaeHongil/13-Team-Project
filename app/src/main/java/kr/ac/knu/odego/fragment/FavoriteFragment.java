@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +11,6 @@ import android.widget.LinearLayout;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
-import kr.ac.knu.odego.OdegoApplication;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.FavoriteListAdapter;
 import kr.ac.knu.odego.item.Favorite;
@@ -28,7 +26,6 @@ public class FavoriteFragment extends Fragment {
 
     @Override
     public void onStart() {
-        Log.i(getClass().getSimpleName(), OdegoApplication.getMethodName(Thread.currentThread().getStackTrace()));
         super.onStart();
         mRealm = Realm.getDefaultInstance();
         RealmResults<Favorite> results = mRealm.where(Favorite.class).findAllSorted("index");
@@ -37,7 +34,6 @@ public class FavoriteFragment extends Fragment {
 
     @Override
     public void onStop() {
-        Log.i(getClass().getSimpleName(), OdegoApplication.getMethodName(Thread.currentThread().getStackTrace()));
         super.onStop();
         if(mRealm != null)
             mRealm.close();
@@ -47,13 +43,14 @@ public class FavoriteFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.i(getClass().getSimpleName(), OdegoApplication.getMethodName(Thread.currentThread().getStackTrace()));
-        rootView = (LinearLayout) inflater.inflate(R.layout.fragment_favorite_list, container, false);
+        rootView = (LinearLayout) inflater.inflate(R.layout.fragment_list, container, false);
 
-        mFavoriteListAdapter = new FavoriteListAdapter(this, null, true);
         RecyclerView favoriteListView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
         favoriteListView.setLayoutManager( new LinearLayoutManager(getContext()) );
+        mFavoriteListAdapter = new FavoriteListAdapter(this, null, true);
         favoriteListView.setAdapter(mFavoriteListAdapter);
+
+
 
         return rootView;
     }

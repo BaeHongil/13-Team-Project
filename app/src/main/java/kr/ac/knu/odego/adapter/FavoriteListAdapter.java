@@ -8,11 +8,11 @@ import android.widget.ToggleButton;
 import io.realm.OrderedRealmCollection;
 import io.realm.RealmRecyclerViewAdapter;
 import kr.ac.knu.odego.R;
-import kr.ac.knu.odego.activity.BeaconActivity;
 import kr.ac.knu.odego.activity.BusStopArrInfoActivity;
 import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.fragment.FavoriteFragment;
+import kr.ac.knu.odego.item.BusPosInfo;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Favorite;
 import kr.ac.knu.odego.item.Route;
@@ -82,7 +82,7 @@ public class FavoriteListAdapter extends RealmRecyclerViewAdapter<Favorite, Favo
                     intent.putExtra("busStopId", data.getMBusStop().getId() );
                     context.startActivity(intent);
                 } else {
-                    Intent intent = new Intent( context , BeaconActivity.class);
+                    Intent intent = new Intent( context , BusPosInfo.class);
                     intent.putExtra("routeId", data.getMRoute().getId() );
                     context.startActivity(intent);
                 }
