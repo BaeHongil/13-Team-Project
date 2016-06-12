@@ -6,7 +6,8 @@
     android:layout_height="match_parent"
     android:gravity="center"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    android:id="@+id/progress_layout">
+    android:id="@+id/progress_layout"
+    android:visibility="gone">
 
     <TextView
         android:layout_width="wrap_content"

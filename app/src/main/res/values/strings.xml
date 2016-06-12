@@ -41,6 +41,8 @@
     <string name="ok">확인</string>
     <string name="cancel">취소</string>
 
+    <string name="dest_cancel">목적지 초기화</string>
+
     <string name="noti_title">%1$s 탑승</string>
     <string name="noti_text_setup_dest">원하는 도착지를 설정하세요</string>
     <string name="noti_text_show_dest">목적지 : %1$s</string>

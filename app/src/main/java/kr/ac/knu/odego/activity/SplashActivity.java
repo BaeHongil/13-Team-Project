@@ -34,7 +34,7 @@ public class SplashActivity extends AppCompatActivity {
             public void run() {
                 finish();
             }
-        }, 2000);
+        }, 1500);
     }
 /*
     @Override

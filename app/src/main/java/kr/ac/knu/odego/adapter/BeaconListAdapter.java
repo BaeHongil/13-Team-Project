@@ -46,7 +46,7 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
     private final String EXPRESS = "express";
 
     private int startIndex;
-    private int curIndex;
+    private int curIndex = -1;
     private int destIndex;
 
     public BeaconListAdapter(Context context, OrderedRealmCollection<BusStop> data, Realm mRealm, String routeType, String busId, int startIndex, int destIndex) {
@@ -55,7 +55,6 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
         this.busId = busId;
         this.routeType = routeType;
         this.startIndex = startIndex;
-        this.curIndex = startIndex;
         this.destIndex = destIndex;
 
         String type;
@@ -217,14 +216,19 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
             // 전체 뷰 선택
             if( v == itemView ) {
                 if (position > curIndex) { // 현재 위치보다 멀리 있는 도착지 선택시
-                    // 이미 선택한 목적지를 다시 선택할 때
-                    if (position == destIndex) {
+                    if (position == destIndex) { // 이미 선택한 목적지를 다시 선택할 때 취소진행
                         destIndex = -1;
-                        goalListener.onChangeBusDest("목적지를 선택하세요.", destIndex);
+                        goalListener.onChangeBusDest(context.getString(R.string.noti_title), destIndex);
+                        Toast.makeText(context, context.getString(R.string.dest_cancel), Toast.LENGTH_SHORT).show();
                         return;
-                    } else {
+                    } else { // 목적지 선택
                         destIndex = position;
-                        goalListener.onChangeBusDest(busStopName.getText().toString(), destIndex);
+                        String strBusStopName = busStopName.getText().toString();
+                        goalListener.onChangeBusDest(strBusStopName, destIndex);
+                        Toast.makeText(context,
+                                String.format( context.getString(R.string.noti_text_show_dest), strBusStopName ),
+                                Toast.LENGTH_SHORT)
+                                .show();
                     }
                     notifyDataSetChanged();
                 } else // 현재위치보다 앞에 도착지 클릭 시
