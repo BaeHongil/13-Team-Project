@@ -2,9 +2,12 @@ package kr.ac.knu.odego.activity;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.CoordinatorLayout;
@@ -19,9 +22,14 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.ImageSpan;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -68,10 +76,19 @@ public class MainActivity extends AppCompatActivity
         mContentsLayout = (CoordinatorLayout) findViewById(R.id.contents_layout);
         // fragment 탭 페이지 설정
         SectionsPagerAdapter mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-        mSectionsPagerAdapter.addFragment(new FavoriteFragment(), getString(R.string.page_title_0));
-        mSectionsPagerAdapter.addFragment(new RouteSearchFragment(), getString(R.string.page_title_1));
-        mSectionsPagerAdapter.addFragment(new BusStopSearchFragment(), getString(R.string.page_title_2));
-        mSectionsPagerAdapter.addFragment(new TheOtherFragment(), getString(R.string.page_title_3));
+        mSectionsPagerAdapter.addFragment(new FavoriteFragment(),
+                ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn1), " ")
+        );
+        mSectionsPagerAdapter.addFragment(new RouteSearchFragment(),
+                ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn2), " ")
+        );
+        mSectionsPagerAdapter.addFragment(new BusStopSearchFragment(),
+                ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn3), " ")
+        );
+        mSectionsPagerAdapter.addFragment(new TheOtherFragment(),
+                ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn4), " ")
+        );
+
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
@@ -214,13 +231,13 @@ public class MainActivity extends AppCompatActivity
      */
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
         private ArrayList<Fragment> mFragmentList = new ArrayList<>();
-        private ArrayList<String> mFragmentTitleList = new ArrayList<>();
+        private ArrayList<CharSequence> mFragmentTitleList = new ArrayList<>();
 
         public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 
-        public void addFragment(Fragment fragment, String title) {
+        public void addFragment(Fragment fragment, CharSequence title) {
             mFragmentList.add(fragment);
             mFragmentTitleList.add(title);
         }
@@ -337,4 +354,30 @@ public class MainActivity extends AppCompatActivity
             mBound = false;
         }
     };
+}
+
+class ViewUtil {
+    public static int TEXT_SIZE  = -1;
+    public static int TEXT_SIZE_BIG = -1;
+
+    public static Drawable drawable(Context context, int id) {
+        if (TEXT_SIZE == -1) {
+            TEXT_SIZE = (int) new TextView(context).getTextSize();
+            TEXT_SIZE_BIG = (int) (TEXT_SIZE * 2.5);
+        }
+        if (Build.VERSION.SDK_INT >= 21) {
+            return context.getResources().getDrawable(id, context.getTheme());
+        } else {
+            return context.getResources().getDrawable(id);
+        }
+    }
+
+    public static CharSequence iconText(Drawable icon, String text) {
+        SpannableString iconText = new SpannableString(" "+text);
+        icon.setBounds(0, 0, TEXT_SIZE_BIG, TEXT_SIZE_BIG);
+        ImageSpan imageSpan = new ImageSpan(icon);
+
+        iconText.setSpan(imageSpan, 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return iconText;
+    }
 }
