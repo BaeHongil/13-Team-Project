@@ -34,12 +34,17 @@
     <string name="refresh_busposinfo_data">버스위치정보를 새로고침합니다</string>
     <string name="refreshing_busposinfo_data">버스위치정보 새로고침 중</string>
 
-    <string name="setup_destinatioin">원하는 도착지를 설정하세요</string>
     <string name="reject_set_destnation">현재 버스위치보다 뒤에 도착지를 설정하세요</string>
-    <string name="noti_contentTitle">%1$s 탑승</string>
 
     <string name="set_dest_dialog_title">도착지 설정</string>
     <string name="set_dest_dialog_msg">%1$s를 도착지로 설정하시겠습니까?</string>
     <string name="ok">확인</string>
     <string name="cancel">취소</string>
+
+    <string name="noti_title">%1$s 탑승</string>
+    <string name="noti_text_setup_dest">원하는 도착지를 설정하세요</string>
+    <string name="noti_text_show_dest">목적지 : %1$s</string>
+    <string name="noti_text_remain_busstops">%1$d 정류장 남았습니다</string>
+    <string name="noti_text_remain_1_busstop">전정류소입니다. 하차준비해주세요</string>
+    <string name="noti_text_dest_busstop">도착지입니다. 바로 하차해주세요</string>
 </resources>

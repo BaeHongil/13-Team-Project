@@ -662,8 +662,7 @@ public class Parser {
      */
     public void sendNotiModMsg(String fcmToken, int destIndex) throws IOException {
         if ( isAppServer() ) {
-            String url = appServerDomain + "/notifications/busarr/" + fcmToken
-                    + "/" + destIndex;
+            String url = appServerDomain + "/notifications/busarr/" + fcmToken;
             MediaType JSON = MediaType.parse("application/json; charset=utf-8");
             RequestBody requestBody = RequestBody.create(JSON, "{\"destIndex\":" + destIndex + "}");
             Request request = new Request.Builder()

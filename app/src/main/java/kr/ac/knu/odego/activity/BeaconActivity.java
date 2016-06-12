@@ -22,6 +22,7 @@ import com.google.firebase.iid.FirebaseInstanceId;
 import java.io.IOException;
 
 import io.realm.Realm;
+import kr.ac.knu.odego.OdegoApplication;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.BeaconListAdapter;
 import kr.ac.knu.odego.common.Parser;
@@ -127,6 +128,9 @@ public class BeaconActivity extends AppCompatActivity{
 
                 // destIndex가 -1일 때
                 if( destIndex == -1 ) {
+                    String contentTitle = String.format(getString(R.string.noti_title), mBeaconArrInfo.getMRoute().getNo());
+                    String contentText = String.format(getString(R.string.noti_text_show_dest), text);
+                    OdegoApplication.createNotification(getBaseContext(), contentTitle, contentText);
                     if( mBeaconArrInfo.getDestIndex() != -1 )
                         RealmTransaction.deleteDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, mHandler);
                     return;
@@ -142,6 +146,8 @@ public class BeaconActivity extends AppCompatActivity{
         });
         mListView.setAdapter(mListAdapter);
     }
+
+
 
     private void setHeaderData() {
         TextView headerRouteType = (TextView) HeaderContentsView.findViewById(R.id.route_type);
@@ -199,7 +205,7 @@ public class BeaconActivity extends AppCompatActivity{
                 mListAdapter.setCurIndex(curIndex);
 
                 progressLayout.setVisibility(View.GONE);
-                mListView.setSelection(curIndex - 2);
+                mListView.setSelection(curIndex - 1);
                 mListView.setVisibility(View.VISIBLE);
             }
         }
