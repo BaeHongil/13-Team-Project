@@ -5,6 +5,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.database.DataSetObservable;
+import android.database.DataSetObserver;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -33,6 +35,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.text.Format;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +46,7 @@ import java.util.concurrent.Future;
 
 import io.realm.Realm;
 import kr.ac.knu.odego.R;
+import kr.ac.knu.odego.adapter.SectionsPagerAdapter;
 import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.fragment.BusStopSearchFragment;
 import kr.ac.knu.odego.fragment.FavoriteFragment;
@@ -50,9 +55,11 @@ import kr.ac.knu.odego.fragment.TheOtherFragment;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Route;
 import kr.ac.knu.odego.service.BeaconService;
+import lombok.Getter;
+import lombok.Setter;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, ViewPager.OnPageChangeListener {
     private CoordinatorLayout mContentsLayout;
     private ViewPager mViewPager;
     private BluetoothAdapter mBtAdapter;
@@ -63,6 +70,27 @@ public class MainActivity extends AppCompatActivity
     private boolean mBound = false;
     private boolean isStartSplash = false;
 
+    private CharSequence tab_main1, tab_main2, tab_main3, tab_main4;
+    private CharSequence tab_off_main1, tab_off_main2, tab_off_main3, tab_off_main4;
+    private CharSequence mPageMark;
+    private int mPrevPosition = 0;
+
+    private SectionsPagerAdapter mSectionsPagerAdapter;
+    TabLayout tabLayout;
+
+    DataSetObserver mObserver = new DataSetObserver() {
+        @Override
+        public void onChanged() {
+            super.onChanged();
+        }
+
+        @Override
+        public void onInvalidated() {
+            super.onInvalidated();
+        }
+    };
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,25 +100,43 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         mContentsLayout = (CoordinatorLayout) findViewById(R.id.contents_layout);
+        // 탭 메뉴 세팅
+        tab_main1 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn1),"");
+        tab_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn2),"");
+        tab_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn3),"");
+        tab_main4 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn4),"");
+
+        tab_off_main1 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn1),"");
+        tab_off_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn2),"");
+        tab_off_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn3),"");
+        tab_off_main4 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn4),"");
+
         // fragment 탭 페이지 설정
-        SectionsPagerAdapter mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+        mSectionsPagerAdapter.registerDataSetObserver(mObserver);
+
         mSectionsPagerAdapter.addFragment(new FavoriteFragment(),
-                ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn1), " ")
+                tab_main1
         );
         mSectionsPagerAdapter.addFragment(new RouteSearchFragment(),
-                ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn2), " ")
+                tab_off_main2
         );
         mSectionsPagerAdapter.addFragment(new BusStopSearchFragment(),
-                ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn3), " ")
+                tab_off_main3
         );
         mSectionsPagerAdapter.addFragment(new TheOtherFragment(),
-                ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn4), " ")
+                tab_off_main4
         );
+
+
 
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+
+        mViewPager.addOnPageChangeListener(this);
+
+        tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
 
         /*// 플로팅액션버튼 설정
@@ -232,40 +278,62 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    @Override
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+    }
+
+    @Override
+    public void onPageSelected(int position){
+
+
+        //이전 페이지에 해당하는 페이지 표시 이미지 변경
+        switch ( mPrevPosition ) {
+            case 0:
+                mSectionsPagerAdapter.getMFragmentTitleList().set(mPrevPosition, tab_off_main1);
+                break;
+            case 1:
+                mSectionsPagerAdapter.getMFragmentTitleList().set(mPrevPosition, tab_off_main2);
+                break;
+            case 2:
+                mSectionsPagerAdapter.getMFragmentTitleList().set(mPrevPosition, tab_off_main3);
+                break;
+            case 3:
+                mSectionsPagerAdapter.getMFragmentTitleList().set(mPrevPosition, tab_off_main4);
+                break;
+        }
+
+        //현재 페이지에 해당하는 페이지 표시 이미지 변경
+        switch ( position ) {
+            case 0:
+                mSectionsPagerAdapter.getMFragmentTitleList().set(position, tab_main1);
+                break;
+            case 1:
+                mSectionsPagerAdapter.getMFragmentTitleList().set(position, tab_main2);
+                break;
+            case 2:
+                mSectionsPagerAdapter.getMFragmentTitleList().set(position, tab_main3);
+                break;
+            case 3:
+                mSectionsPagerAdapter.getMFragmentTitleList().set(position, tab_main4);
+                break;
+        }
+
+        mPrevPosition = position;                //이전 포지션 값을 현재로 변경
+        mSectionsPagerAdapter.notifyDataSetChanged();    }
+
+    @Override
+    public void onPageScrollStateChanged(int state) {
+
+    }
+
 
     /* 내부 클래스 시작 */
 
     /**
      * Fragement Page 어뎁터
      */
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
-        private ArrayList<Fragment> mFragmentList = new ArrayList<>();
-        private ArrayList<CharSequence> mFragmentTitleList = new ArrayList<>();
 
-        public SectionsPagerAdapter(FragmentManager fm) {
-            super(fm);
-        }
-
-        public void addFragment(Fragment fragment, CharSequence title) {
-            mFragmentList.add(fragment);
-            mFragmentTitleList.add(title);
-        }
-
-        @Override
-        public Fragment getItem(int position) {
-            return mFragmentList.get(position);
-        }
-
-        @Override
-        public int getCount() {
-            return mFragmentList.size();
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            return mFragmentTitleList.get(position);
-        }
-    }
     /**
      * 버스정류장, 노선 DB 생성 AsyncTask
      */
