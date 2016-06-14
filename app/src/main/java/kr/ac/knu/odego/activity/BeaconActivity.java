@@ -10,7 +10,9 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -28,7 +30,6 @@ import kr.ac.knu.odego.adapter.BeaconListAdapter;
 import kr.ac.knu.odego.common.Parser;
 import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.common.RouteType;
-import kr.ac.knu.odego.interfaces.BeaconBusDestListener;
 import kr.ac.knu.odego.item.BeaconArrInfo;
 import kr.ac.knu.odego.item.NotiReqMsg;
 
@@ -62,14 +63,16 @@ public class BeaconActivity extends AppCompatActivity{
         setContentView(R.layout.activity_beacon);
 
         mRealm = Realm.getDefaultInstance();
-        int beaconArrInfoIndex = getIntent().getExtras().getInt("beaconArrInfoIndex", -1);
-        if( beaconArrInfoIndex == -1 ) {
+
+        int beaconArrInfoIndex;
+        if( getIntent().getExtras() == null ) {
             beaconArrInfoIndex = mRealm.where(BeaconArrInfo.class).max("index").intValue();
             mBeaconArrInfo = mRealm.where(BeaconArrInfo.class).equalTo("index", beaconArrInfoIndex).findFirst();
             mNotiReqMsg = new NotiReqMsg(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(),
                     mBeaconArrInfo.getBusId(), mBeaconArrInfo.getDestIndex(), 2, fcmToken);
         } else {
             isEditable = false; // 버스도착알림 기록 확인시에는 수정불가
+            beaconArrInfoIndex = getIntent().getExtras().getInt("beaconArrInfoIndex", -1);
             mBeaconArrInfo = mRealm.where(BeaconArrInfo.class).equalTo("index", beaconArrInfoIndex).findFirst();
         }
 
@@ -137,10 +140,60 @@ public class BeaconActivity extends AppCompatActivity{
         mListView.setAdapter(mListAdapter);
 
         if( isEditable ) {
-            mListAdapter.setBusDestListener(new BeaconBusDestListener() {
+            mListView.setSelection( mBeaconArrInfo.getStartIndex() + 1 ); // 기록모드일 때는 출발지 기준으로 리스트위치 설정
+            mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Log.i("ddd", position+"");
+                    BeaconListAdapter mBeaconListAdapter = (BeaconListAdapter) parent.getAdapter();
+
+                    if ( position > mBeaconListAdapter.getCurIndex() ) { // 현재 위치보다 멀리 있는 도착지 선택시
+                        String contentTitle, contentText;
+                        String destMsg, toastMsg;
+
+                        if ( position == mBeaconListAdapter.getDestIndex() ) { // 이미 선택한 목적지를 다시 선택할 때 취소진행
+                            mBeaconListAdapter.setDestIndex(-1);
+
+                            destMsg = getString(R.string.noti_text_setup_dest);
+                            setDestTextView( destMsg );
+                            toastMsg = getString(R.string.dest_cancel);
+
+                            // Realm에 destIndex 초기화 및 서버에 Noti Delete 요청
+                            if (mBeaconArrInfo.getDestIndex() != -1)
+                                RealmTransaction.deleteDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, mHandler);
+                        } else { // 목적지 선택
+                            mBeaconListAdapter.setDestIndex(position);
+                            mNotiReqMsg.setDestIndex(position);
+
+                            String strBusStopName = mBeaconListAdapter.getItem(position).getName();
+                            destMsg = String.format( getString(R.string.noti_text_show_dest), strBusStopName );
+                            setDestTextView( destMsg );
+                            toastMsg = destMsg;
+
+                            // Realm에 destIndex 저장 및 서버에 destIndex 전송
+                            if (mBeaconArrInfo.getDestIndex() == -1)
+                                RealmTransaction.createDestIndex(mRealm, mBeaconArrInfo.getIndex(), mNotiReqMsg, mHandler);
+                            else
+                                RealmTransaction.modifyDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, position, mHandler);
+                        }
+
+                        // 사용자에게 도착지설정 토스트 메시지
+                        Toast.makeText(getBaseContext(), toastMsg, Toast.LENGTH_SHORT).show();
+
+                        // Notification 재설정
+                        contentTitle = String.format(getString(R.string.noti_title), mBeaconArrInfo.getMRoute().getNo());
+                        contentText = destMsg;
+                        OdegoApplication.createNotification(getBaseContext(), contentTitle, contentText);
+
+                        mBeaconListAdapter.notifyDataSetChanged();
+                    } else // 현재위치보다 앞에 도착지 클릭 시
+                        Toast.makeText(getBaseContext(), getString(R.string.reject_set_destnation), Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            /*mListAdapter.setBusDestListener(new BeaconBusDestListener() {
                 @Override
                 public void onChangeBusDest(String text, int destIndex) {
-                    setDestTextView(text);
 
                     // destIndex가 -1일 때
                     if (destIndex == -1) {
@@ -159,11 +212,9 @@ public class BeaconActivity extends AppCompatActivity{
                     } else
                         RealmTransaction.modifyDestIndex(mRealm, mBeaconArrInfo.getIndex(), fcmToken, destIndex, mHandler);
                 }
-            });
+            });*/
         }
     }
-
-
 
     private void setHeaderData() {
         TextView headerRouteType = (TextView) HeaderContentsView.findViewById(R.id.route_type);

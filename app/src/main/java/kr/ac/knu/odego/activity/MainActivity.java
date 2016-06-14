@@ -2,42 +2,27 @@ package kr.ac.knu.odego.activity;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.DataSetObservable;
 import android.database.DataSetObserver;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.style.ImageSpan;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.text.Format;
-import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +33,7 @@ import io.realm.Realm;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.SectionsPagerAdapter;
 import kr.ac.knu.odego.common.Parser;
+import kr.ac.knu.odego.common.ViewUtil;
 import kr.ac.knu.odego.fragment.BusStopSearchFragment;
 import kr.ac.knu.odego.fragment.FavoriteFragment;
 import kr.ac.knu.odego.fragment.RouteSearchFragment;
@@ -55,8 +41,6 @@ import kr.ac.knu.odego.fragment.TheOtherFragment;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Route;
 import kr.ac.knu.odego.service.BeaconService;
-import lombok.Getter;
-import lombok.Setter;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, ViewPager.OnPageChangeListener {
@@ -72,7 +56,6 @@ public class MainActivity extends AppCompatActivity
 
     private CharSequence tab_main1, tab_main2, tab_main3, tab_main4;
     private CharSequence tab_off_main1, tab_off_main2, tab_off_main3, tab_off_main4;
-    private CharSequence mPageMark;
     private int mPrevPosition = 0;
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
@@ -331,10 +314,6 @@ public class MainActivity extends AppCompatActivity
     /* 내부 클래스 시작 */
 
     /**
-     * Fragement Page 어뎁터
-     */
-
-    /**
      * 버스정류장, 노선 DB 생성 AsyncTask
      */
     private class DataBaseCreateAsyncTask extends AsyncTask<Void, String, Boolean> {
@@ -433,28 +412,3 @@ public class MainActivity extends AppCompatActivity
     };
 }
 
-class ViewUtil {
-    public static int TEXT_SIZE  = -1;
-    public static int TEXT_SIZE_BIG = -1;
-
-    public static Drawable drawable(Context context, int id) {
-        if (TEXT_SIZE == -1) {
-            TEXT_SIZE = (int) new TextView(context).getTextSize();
-            TEXT_SIZE_BIG = (int) (TEXT_SIZE * 2.5);
-        }
-        if (Build.VERSION.SDK_INT >= 21) {
-            return context.getResources().getDrawable(id, context.getTheme());
-        } else {
-            return context.getResources().getDrawable(id);
-        }
-    }
-
-    public static CharSequence iconText(Drawable icon, String text) {
-        SpannableString iconText = new SpannableString(" "+text);
-        icon.setBounds(0, 0, TEXT_SIZE_BIG, TEXT_SIZE_BIG);
-        ImageSpan imageSpan = new ImageSpan(icon);
-
-        iconText.setSpan(imageSpan, 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        return iconText;
-    }
-}

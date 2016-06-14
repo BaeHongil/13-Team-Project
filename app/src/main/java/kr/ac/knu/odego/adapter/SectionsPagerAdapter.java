@@ -34,8 +34,6 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         mFragmentTitleList.add(title);
     }
 
-
-
     @Override
     public Fragment getItem(int position) {
         return mFragmentList.get(position);

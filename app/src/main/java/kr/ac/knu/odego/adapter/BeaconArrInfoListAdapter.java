@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat;
 import io.realm.OrderedRealmCollection;
 import io.realm.RealmRecyclerViewAdapter;
 import kr.ac.knu.odego.R;
-import kr.ac.knu.odego.activity.BusStopArrInfoActivity;
+import kr.ac.knu.odego.activity.BeaconActivity;
 import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.item.BeaconArrInfo;
 
@@ -52,7 +52,12 @@ public class BeaconArrInfoListAdapter extends RealmRecyclerViewAdapter<BeaconArr
         int startBusStopIndex = mBeaconArrInfo.getStartIndex();
         int destBusStopIndex = mBeaconArrInfo.getDestIndex();
         String startBusStopName = mBeaconArrInfo.getBusStops().get(startBusStopIndex).getName();
-        String destBusStopName = mBeaconArrInfo.getBusStops().get(destBusStopIndex).getName();
+        String destBusStopName;
+        if( destBusStopIndex == -1 )
+            destBusStopName = "목적지 지정X";
+        else
+            destBusStopName = mBeaconArrInfo.getBusStops().get(destBusStopIndex).getName();
+
         holder.startDest.setText(startBusStopName + " -> " +destBusStopName);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd a hh:mm");
@@ -79,7 +84,7 @@ public class BeaconArrInfoListAdapter extends RealmRecyclerViewAdapter<BeaconArr
         @Override
         public void onClick(View v) {
             if (v == itemView) {
-                Intent intent = new Intent(context, BusStopArrInfoActivity.class);
+                Intent intent = new Intent(context, BeaconActivity.class);
                 intent.putExtra("beaconArrInfoIndex", mBeaconArrInfo.getIndex());
                 context.startActivity(intent);
             }

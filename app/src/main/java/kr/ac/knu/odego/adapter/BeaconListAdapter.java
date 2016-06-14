@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import io.realm.OrderedRealmCollection;
@@ -17,9 +16,10 @@ import io.realm.RealmBaseAdapter;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.common.RouteType;
-import kr.ac.knu.odego.interfaces.BeaconBusDestListener;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Favorite;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Created by Brick on 2016-06-09.
@@ -31,14 +31,7 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
     private int goalImg, goalFinalImg;
     private int budIdBackgroundColor;
 
-    private BeaconBusDestListener goalListener;
-
-    private ImageView destBusIcon;
-    private TextView destBusId;
-
     private String busId;
-    private int presentPosition;
-    private String routeType;
 
     private final String MAIN = "main";
     private final String BRANCH = "branch";
@@ -46,14 +39,13 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
     private final String EXPRESS = "express";
 
     private int startIndex;
-    private int curIndex = -1;
-    private int destIndex;
+    @Getter private int curIndex = -1;
+    @Getter @Setter private int destIndex;
 
     public BeaconListAdapter(Context context, OrderedRealmCollection<BusStop> data, Realm mRealm, String routeType, String busId, int startIndex, int destIndex) {
         super(context, data);
         this.mRealm = mRealm;
         this.busId = busId;
-        this.routeType = routeType;
         this.startIndex = startIndex;
         this.destIndex = destIndex;
 
@@ -86,10 +78,6 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
         notifyDataSetChanged();
     }
 
-    public void setBusDestListener(BeaconBusDestListener goalListener) {
-        this.goalListener = goalListener;
-    }
-
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View itemView = null;
@@ -111,8 +99,7 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
         // 즐겨찾기 설정
         if( mRealm.where(Favorite.class).equalTo("mBusStop.id", mBusStop.getId()).count() > 0 )
             viewHolder.favoriteBtn.setChecked(true);
-        else
-            viewHolder.busStopName.setText(mBusStop.getName());
+        viewHolder.busStopName.setText(mBusStop.getName());
         viewHolder.busStopNo.setText(mBusStop.getNo());
 
 
@@ -190,14 +177,13 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
         public ViewHolder(View itemView) {
             this.itemView = itemView;
 
-            itemView.setOnClickListener(this);
             favoriteBtn = (ToggleButton) itemView.findViewById(R.id.favorite_btn);
             favoriteBtn.setOnClickListener(this);
+            favoriteBtn.setFocusable(false);
             busStopName = (TextView) itemView.findViewById(R.id.busstop_name);
             busStopNo = (TextView) itemView.findViewById(R.id.busstop_no);
             busIcon = (ImageView) itemView.findViewById(R.id.bus_icon);
             busId = (TextView) itemView.findViewById(R.id.bus_id);
-
         }
 
         @Override
@@ -212,7 +198,7 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
                 RealmTransaction.createBusStopFavorite(mRealm, busStopId);
                 return;
             }
-
+/*
             // 전체 뷰 선택
             if( v == itemView ) {
                 if (position > curIndex) { // 현재 위치보다 멀리 있는 도착지 선택시
@@ -220,7 +206,6 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
                         destIndex = -1;
                         goalListener.onChangeBusDest(context.getString(R.string.noti_title), destIndex);
                         Toast.makeText(context, context.getString(R.string.dest_cancel), Toast.LENGTH_SHORT).show();
-                        return;
                     } else { // 목적지 선택
                         destIndex = position;
                         String strBusStopName = busStopName.getText().toString();
@@ -235,7 +220,7 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
                     Toast.makeText(context, context.getString(R.string.reject_set_destnation), Toast.LENGTH_SHORT).show();
 
                 return;
-            }
+            }*/
         }
     }
 

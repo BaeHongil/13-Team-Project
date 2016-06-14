@@ -12,6 +12,7 @@ import android.widget.RelativeLayout;
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
+import io.realm.Sort;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.BeaconArrInfoListAdapter;
 import kr.ac.knu.odego.item.BeaconArrInfo;
@@ -27,7 +28,7 @@ public class TheOtherFragment extends Fragment {
     public void onStart() {
         super.onStart();
         mRealm = Realm.getDefaultInstance();
-        results = mRealm.where(BeaconArrInfo.class).findAllSorted("index");
+        results = mRealm.where(BeaconArrInfo.class).findAllSorted("index", Sort.DESCENDING);
         setVisibilityNoContentsLayout(results);
         realmChangeListener = new RealmChangeListener<RealmResults<BeaconArrInfo>>() {
             @Override
