@@ -6,7 +6,6 @@ import android.os.Message;
 import java.io.IOException;
 
 import io.realm.Realm;
-import io.realm.RealmResults;
 import kr.ac.knu.odego.OdegoApplication;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.item.BeaconArrInfo;
@@ -19,16 +18,38 @@ import kr.ac.knu.odego.item.Route;
  * Created by BHI on 2016-06-06.
  */
 public final class RealmTransaction {
-    public static void clearHistory(Realm mRealm) {
+    public static void clearDB(Realm mRealm) {
         mRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                RealmResults<BusStop> busStopResults = realm.where(BusStop.class).findAll();
-                for( BusStop mBusStop : busStopResults )
-                    mBusStop.setHistoryIndex(0);
-                RealmResults<Route> RouteResults = realm.where(Route.class).findAll();
-                for( Route mRoute : RouteResults )
-                    mRoute.setHistoryIndex(0);
+                realm.deleteAll();
+            }
+        });
+    }
+
+    public static void clearFavorite(Realm mRealm) {
+        mRealm.executeTransactionAsync(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                realm.where(Favorite.class).findAll().deleteAllFromRealm();
+            }
+        });
+    }
+
+    public static void clearSearchHistory(Realm mRealm) {
+        mRealm.executeTransactionAsync(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                realm.where(BeaconArrInfo.class).findAll().deleteAllFromRealm();
+            }
+        });
+    }
+
+    public static void clearBeaconArrInfo(Realm mRealm) {
+        mRealm.executeTransactionAsync(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                realm.where(Favorite.class).findAll().deleteAllFromRealm();
             }
         });
     }

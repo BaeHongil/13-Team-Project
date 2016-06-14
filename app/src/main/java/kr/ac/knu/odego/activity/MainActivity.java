@@ -2,6 +2,7 @@ package kr.ac.knu.odego.activity;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.DataSetObserver;
@@ -15,11 +16,13 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -59,7 +62,9 @@ public class MainActivity extends AppCompatActivity
     private int mPrevPosition = 0;
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
-    TabLayout tabLayout;
+    private TabLayout tabLayout;
+    private LinearLayout progressLayout;
+    private DrawerLayout drawer;
 
     DataSetObserver mObserver = new DataSetObserver() {
         @Override
@@ -85,13 +90,13 @@ public class MainActivity extends AppCompatActivity
         mContentsLayout = (CoordinatorLayout) findViewById(R.id.contents_layout);
         // 탭 메뉴 세팅
         tab_main1 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn1),"");
-        tab_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn2),"");
-        tab_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn3),"");
+        tab_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn3),"");
+        tab_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn2),"");
         tab_main4 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn4),"");
 
         tab_off_main1 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn1),"");
-        tab_off_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn2),"");
-        tab_off_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn3),"");
+        tab_off_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn3),"");
+        tab_off_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn2),"");
         tab_off_main4 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn4),"");
 
         // fragment 탭 페이지 설정
@@ -111,17 +116,14 @@ public class MainActivity extends AppCompatActivity
                 tab_off_main4
         );
 
-
-
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
-
-
         mViewPager.addOnPageChangeListener(this);
 
         tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
 
+        progressLayout = (LinearLayout) findViewById(R.id.progress_layout);
         /*// 플로팅액션버튼 설정
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.refresh);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -133,7 +135,7 @@ public class MainActivity extends AppCompatActivity
         });*/
 
         // 좌측 네이게이션 설정
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
@@ -150,8 +152,7 @@ public class MainActivity extends AppCompatActivity
         mRealm = Realm.getDefaultInstance();
 
         // Parser로 DB 생성
-        new DataBaseCreateAsyncTask().execute();
-
+        new DataBaseCreateAsyncTask().execute(false);
     }
 
     @Override
@@ -242,21 +243,37 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        if (id == R.id.nav_clear_db) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        } else if (id == R.id.nav_slideshow) {
+            builder.setTitle(R.string.nav_dialog_update_db_title)
+                    .setMessage(R.string.nav_dialog_update_db_message)
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            new DataBaseCreateAsyncTask().execute(true);
+                        }
+                    })
+                    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
 
-        } else if (id == R.id.nav_manage) {
+                        }
+                    });
+            builder.create().show();
 
-        } else if (id == R.id.nav_share) {
+        } else if (id == R.id.nav_modify_remaincount) {
 
-        } else if (id == R.id.nav_send) {
+        } else if (id == R.id.nav_delete_favorite) {
+        //    RealmTransaction.clearFavorite(mRealm);
+        } else if (id == R.id.nav_delete_recent_search) {
+        //    RealmTransaction.clearSearchHistory(mRealm);
+        } else if (id == R.id.nav_delete_beaconarrinfo) {
+        //    RealmTransaction.clearBeaconArrInfo(mRealm);
+        } else if (id == R.id.nav_open_source_license) {
 
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -268,8 +285,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onPageSelected(int position){
-
-
         //이전 페이지에 해당하는 페이지 표시 이미지 변경
         switch ( mPrevPosition ) {
             case 0:
@@ -316,29 +331,41 @@ public class MainActivity extends AppCompatActivity
     /**
      * 버스정류장, 노선 DB 생성 AsyncTask
      */
-    private class DataBaseCreateAsyncTask extends AsyncTask<Void, String, Boolean> {
+    private class DataBaseCreateAsyncTask extends AsyncTask<Boolean, String, Boolean> {
+
         @Override
-        protected Boolean doInBackground(Void... params) {
+        protected Boolean doInBackground(Boolean... params) {
+            boolean isDeleteAll = false;
+            if( params.length == 1)
+                isDeleteAll = params[0];
+
             ExecutorService executor = Executors.newSingleThreadExecutor();
             Realm mRealm = null;
             try {
                 mRealm = Realm.getDefaultInstance();
-                boolean isBusStopDB = true;
-                boolean isRouteDB = true;
-                if (mRealm.where(BusStop.class).count() == 0) isBusStopDB = false;
-                if (mRealm.where(Route.class).count() == 0) isRouteDB = false;
-                if (isBusStopDB && isRouteDB) return false; // DB 둘 다 있을 때는 바로 끝내기
+                boolean isBusStopDB = false;
+                boolean isRouteDB = false;
+                if( isDeleteAll ) { // isDeleteAll이 true면 전체 삭제
+                    mRealm.beginTransaction();
+                    mRealm.deleteAll();
+                    mRealm.commitTransaction();
+                } else  { // 전체삭제가 아닐 때만 확인
+                    if (mRealm.where(BusStop.class).count() != 0) isBusStopDB = true;
+                    if (mRealm.where(Route.class).count() != 0) isRouteDB = true;
+                    if (isBusStopDB && isRouteDB) return false; // DB 둘 다 있을 때는 바로 끝내기
+                }
 
-                publishProgress(null);
+                publishProgress();
                 Parser mParser = Parser.getInstance();
                 if (!isBusStopDB && !isRouteDB) { // DB 둘 다 없을 때는 Thread 하나 더 생성해서 DB생성
-                    Future future = executor.submit(new CreateBusDbCallable());
-                    mParser.createRouteDB(mRealm, false);
+                    Future future = executor.submit( new CreateBusDbCallable() );
+                    mParser.createRouteDB(mRealm);
                     future.get();
                 } else if ( !isBusStopDB ) { // BusStop DB만 없을 때
-                    mParser.createBusStopDB(mRealm, false);
+                    mParser.createBusStopDB(mRealm);
                 } else // Route DB만 없을 때
-                    mParser.createRouteDB(mRealm, false);
+                    mParser.createRouteDB(mRealm);
+
             } catch (IOException IOException) {
                 publishProgress( getBaseContext().getString(R.string.network_error_msg) );
                 return false;
@@ -355,23 +382,25 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected void onProgressUpdate(String... values) {
-            if(values != null) { // false면 네트워크 오류
+            if(values.length != 0) { // false면 네트워크 오류
                 String toastMsg = values[0];
                 Toast.makeText(getBaseContext(), toastMsg, Toast.LENGTH_LONG);
                 return;
             }
-            View.inflate(getBaseContext(), R.layout.progress, mContentsLayout);
-            mViewPager.setVisibility(View.INVISIBLE);
+
+            mViewPager.setVisibility(View.GONE);
+            progressLayout.setVisibility(View.VISIBLE);
         }
 
         @Override
         protected void onPostExecute(Boolean aBoolean) {
             if( aBoolean ) {
-                mContentsLayout.removeView( mContentsLayout.findViewById(R.id.progress_layout) );
+                progressLayout.setVisibility(View.GONE);
                 mViewPager.setVisibility(View.VISIBLE);
             }
 
-            if( mBtAdapter != null && mBtAdapter.isEnabled() ) {
+            // 비콘 서비스 실행여부
+            if( mBtAdapter != null && mBtAdapter.isEnabled() && !mBound ) {
                 Intent intent = new Intent(getBaseContext(), BeaconService.class);
                 startService(intent);
                 bindService(intent, mConnection, BIND_AUTO_CREATE);
@@ -381,13 +410,14 @@ public class MainActivity extends AppCompatActivity
 
     // 버스DB 생성 Callable
     private class CreateBusDbCallable implements Callable<Void> {
+
         @Override
         public Void call() throws Exception {
             Parser mParser = Parser.getInstance();
             Realm mRealm = null;
             try {
                 mRealm = Realm.getDefaultInstance();
-                mParser.createBusStopDB(mRealm, false);
+                mParser.createBusStopDB(mRealm);
             } finally {
                 if (mRealm != null)
                     mRealm.close();

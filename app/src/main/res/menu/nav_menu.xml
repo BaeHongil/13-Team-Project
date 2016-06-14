@@ -3,33 +3,38 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_camera"
+            android:id="@+id/nav_clear_db"
             android:icon="@drawable/ic_menu_camera"
-            android:title="Import" />
+            android:title="데이터베이스 초기화" />
         <item
-            android:id="@+id/nav_gallery"
+            android:id="@+id/nav_modify_remaincount"
             android:icon="@drawable/ic_menu_gallery"
-            android:title="Gallery" />
-        <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="Slideshow" />
-        <item
-            android:id="@+id/nav_manage"
-            android:icon="@drawable/ic_menu_manage"
-            android:title="Tools" />
+            android:title="도착지알림 정거장 수 설정" />
     </group>
 
-    <item android:title="Communicate">
+    <item android:title="개인데이터 삭제">
         <menu>
             <item
-                android:id="@+id/nav_share"
-                android:icon="@drawable/ic_menu_share"
-                android:title="Share" />
+                android:id="@+id/nav_delete_favorite"
+                android:icon="@drawable/ic_menu_slideshow"
+                android:title="즐겨찾기 삭제" />
             <item
-                android:id="@+id/nav_send"
+                android:id="@+id/nav_delete_recent_search"
+                android:icon="@drawable/ic_menu_manage"
+                android:title="검색기록 삭제" />
+            <item
+                android:id="@+id/nav_delete_beaconarrinfo"
+                android:icon="@drawable/ic_menu_share"
+                android:title="버스탑승기록 삭제" />
+        </menu>
+    </item>
+
+    <item android:title="정보">
+        <menu>
+            <item
+                android:id="@+id/nav_open_source_license"
                 android:icon="@drawable/ic_menu_send"
-                android:title="Send" />
+                android:title="오픈소스 라이선스" />
         </menu>
     </item>
 

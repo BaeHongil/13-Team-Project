@@ -111,10 +111,9 @@ public class Parser {
      * BusStop(버스정류장) Realm DB 구축
      *
      * @param mRealm      현재 쓰레드에서 생성한 realm 인스턴스
-     * @param isDeleteAll Realm 내의 BusStop 데이터 삭제 여부
      * @throws IOException 네트워크 오류 발생 try-catch로 UI스레드에서 처리요망
      */
-    public void createBusStopDB(Realm mRealm, boolean isDeleteAll) throws IOException {
+    public void createBusStopDB(Realm mRealm) throws IOException {
         if(isAppServer()) {
             String url = appServerDomain + "/busstops";
             Request request = new Request.Builder()
@@ -125,8 +124,6 @@ public class Parser {
             if (!response.isSuccessful()) throw new IOException("response fail");
 
             mRealm.beginTransaction();
-            if( isDeleteAll ) // 모든 BusStop 객체 삭제
-                mRealm.where(BusStop.class).findAll().deleteAllFromRealm();
             mRealm.createAllFromJson(BusStop.class, response.body().byteStream());
             mRealm.commitTransaction();
 
@@ -149,8 +146,6 @@ public class Parser {
             return;
 
         mRealm.beginTransaction();
-        if( isDeleteAll ) // 모든 BusStop 객체 삭제
-            mRealm.where(BusStop.class).findAll().deleteAllFromRealm();
 
         for (Element busStopElem : busStopElems) {
             BusStop bs = mRealm.createObject(BusStop.class);
@@ -183,10 +178,9 @@ public class Parser {
      * Route(노선) Realm DB 구축
      *
      * @param mRealm      현재 쓰레드에서 생성한 realm 인스턴스
-     * @param isDeleteAll Realm 내의 Route 데이터 삭제 여부
      * @throws IOException 네트워크 오류 발생 try-catch로 UI스레드에서 처리요망
      */
-    public void createRouteDB(Realm mRealm, boolean isDeleteAll) throws IOException {
+    public void createRouteDB(Realm mRealm) throws IOException {
         if(isAppServer()) {
             String url = appServerDomain + "/routes";
             Request request = new Request.Builder()
@@ -196,8 +190,6 @@ public class Parser {
             if (!response.isSuccessful()) throw new IOException("response fail");
 
             mRealm.beginTransaction();
-            if( isDeleteAll ) // 모든 Route객체 삭제
-                mRealm.where(Route.class).findAll().deleteAllFromRealm();
             mRealm.createAllFromJson(Route.class, response.body().byteStream());
             mRealm.commitTransaction();
             return;
@@ -216,8 +208,6 @@ public class Parser {
         Elements routeElems = doc.select("item");
         if (!routeElems.isEmpty()) {
             mRealm.beginTransaction();
-            if( isDeleteAll ) // 모든 Route객체 삭제
-                mRealm.where(Route.class).findAll().deleteAllFromRealm();
 
             for (Element routeElem : routeElems) {
                 Route route = mRealm.createObject(Route.class);

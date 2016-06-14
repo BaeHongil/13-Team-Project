@@ -36,10 +36,6 @@
 
     <string name="reject_set_destnation">현재 버스위치보다 뒤에 도착지를 설정하세요</string>
 
-    <string name="set_dest_dialog_title">도착지 설정</string>
-    <string name="set_dest_dialog_msg">%1$s를 도착지로 설정하시겠습니까?</string>
-    <string name="ok">확인</string>
-    <string name="cancel">취소</string>
 
     <string name="dest_cancel">목적지 초기화</string>
 
@@ -49,4 +45,9 @@
     <string name="noti_text_remain_busstops">%1$d 정류장 남았습니다</string>
     <string name="noti_text_remain_1_busstop">전정류소입니다. 하차준비해주세요</string>
     <string name="noti_text_dest_busstop">도착지입니다. 바로 하차해주세요</string>
+
+    <string name="ok">확인</string>
+    <string name="cancel">취소</string>
+    <string name="nav_dialog_update_db_title">데이터베이스 최신화</string>
+    <string name="nav_dialog_update_db_message">최신화하면, 최근검색기록이 사라지고,\n다소 시간이 걸릴 수 있습니다.\n\n데이터베이스를 최신화하시겠습니까?</string>
 </resources>
