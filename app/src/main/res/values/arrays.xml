@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="nav_dialog_remaincount_list">
+        <item>도착시 알림(정확도 낮음)</item>
+        <item>1 정류장 전 알림</item>
+        <item>2 정류장 전 알림(권장)</item>
+        <item>3 정류장 전 알림</item>
+    </string-array>
+</resources>

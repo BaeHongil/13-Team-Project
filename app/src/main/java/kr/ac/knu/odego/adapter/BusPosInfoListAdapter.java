@@ -54,12 +54,12 @@ public class BusPosInfoListAdapter extends BaseAdapter {
         inflater = LayoutInflater.from(mContext);
         if( routeType.equals( RouteType.MAIN.getName() ) )
             type = MAIN;
-        else if( routeType.equals( RouteType.BRANCH.getName() ) )
-            type = BRANCH;
+        else if( routeType.equals( RouteType.EXPRESS.getName() ) )
+            type = EXPRESS;
         else if( routeType.equals( RouteType.CIRCULAR.getName() ) )
             type = CIRCULAR;
         else
-            type = EXPRESS;
+            type = BRANCH;
 
         busOnImg = res.getIdentifier("busposinfo_"+type+"_bus_on", "drawable", packageName );
         busOnFirstImg = res.getIdentifier("busposinfo_"+type+"_bus_on_first", "drawable", packageName );

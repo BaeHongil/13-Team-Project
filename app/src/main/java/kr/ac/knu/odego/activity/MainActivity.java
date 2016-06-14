@@ -33,9 +33,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import io.realm.Realm;
+import kr.ac.knu.odego.OdegoApplication;
 import kr.ac.knu.odego.R;
 import kr.ac.knu.odego.adapter.SectionsPagerAdapter;
 import kr.ac.knu.odego.common.Parser;
+import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.common.ViewUtil;
 import kr.ac.knu.odego.fragment.BusStopSearchFragment;
 import kr.ac.knu.odego.fragment.FavoriteFragment;
@@ -43,6 +45,7 @@ import kr.ac.knu.odego.fragment.RouteSearchFragment;
 import kr.ac.knu.odego.fragment.TheOtherFragment;
 import kr.ac.knu.odego.item.BusStop;
 import kr.ac.knu.odego.item.Route;
+import kr.ac.knu.odego.item.Setting;
 import kr.ac.knu.odego.service.BeaconService;
 
 public class MainActivity extends AppCompatActivity
@@ -51,7 +54,9 @@ public class MainActivity extends AppCompatActivity
     private ViewPager mViewPager;
     private BluetoothAdapter mBtAdapter;
 
-    private Realm mRealm;
+    private Realm mRealm, mSettingRealm;
+    private Setting mSetting;
+    private int requestRemainCount;
 
     private BeaconService mBeaconService;
     private boolean mBound = false;
@@ -90,31 +95,23 @@ public class MainActivity extends AppCompatActivity
         mContentsLayout = (CoordinatorLayout) findViewById(R.id.contents_layout);
         // 탭 메뉴 세팅
         tab_main1 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn1),"");
-        tab_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn3),"");
-        tab_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn2),"");
+        tab_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn2),"");
+        tab_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn3),"");
         tab_main4 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_on_btn4),"");
 
         tab_off_main1 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn1),"");
-        tab_off_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn3),"");
-        tab_off_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn2),"");
+        tab_off_main2 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn2),"");
+        tab_off_main3 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn3),"");
         tab_off_main4 = ViewUtil.iconText(ViewUtil.drawable(this, R.drawable.main_off_btn4),"");
 
         // fragment 탭 페이지 설정
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
         mSectionsPagerAdapter.registerDataSetObserver(mObserver);
 
-        mSectionsPagerAdapter.addFragment(new FavoriteFragment(),
-                tab_main1
-        );
-        mSectionsPagerAdapter.addFragment(new RouteSearchFragment(),
-                tab_off_main2
-        );
-        mSectionsPagerAdapter.addFragment(new BusStopSearchFragment(),
-                tab_off_main3
-        );
-        mSectionsPagerAdapter.addFragment(new TheOtherFragment(),
-                tab_off_main4
-        );
+        mSectionsPagerAdapter.addFragment(new FavoriteFragment(), tab_main1);
+        mSectionsPagerAdapter.addFragment(new RouteSearchFragment(), tab_off_main2);
+        mSectionsPagerAdapter.addFragment(new BusStopSearchFragment(), tab_off_main3);
+        mSectionsPagerAdapter.addFragment(new TheOtherFragment(), tab_off_main4);
 
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
@@ -124,15 +121,6 @@ public class MainActivity extends AppCompatActivity
         tabLayout.setupWithViewPager(mViewPager);
 
         progressLayout = (LinearLayout) findViewById(R.id.progress_layout);
-        /*// 플로팅액션버튼 설정
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.refresh);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });*/
 
         // 좌측 네이게이션 설정
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -150,6 +138,22 @@ public class MainActivity extends AppCompatActivity
 
         // realm 초기화
         mRealm = Realm.getDefaultInstance();
+        mSettingRealm = Realm.getInstance(OdegoApplication.getSettingRealmConfig());
+        mSetting = mSettingRealm.where(Setting.class).findFirst();
+        if( mSetting == null ) {
+            mSettingRealm.executeTransactionAsync(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    Setting setting = realm.createObject(Setting.class);
+                    setting.setRequestRemainCount(2);
+                }
+            }, new Realm.Transaction.OnSuccess() {
+                @Override
+                public void onSuccess() {
+                    mSetting = mSettingRealm.where(Setting.class).findFirst();
+                }
+            });
+        }
 
         // Parser로 DB 생성
         new DataBaseCreateAsyncTask().execute(false);
@@ -170,6 +174,8 @@ public class MainActivity extends AppCompatActivity
         super.onDestroy();
         if( mRealm != null )
             mRealm.close();
+        if( mSettingRealm != null )
+            mSettingRealm.close();
         if( mBound ) {
             mBeaconService.setTimeOut(5 * 60 * 1000L);
             unbindService(mConnection);
@@ -244,38 +250,101 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_clear_db) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-            builder.setTitle(R.string.nav_dialog_update_db_title)
-                    .setMessage(R.string.nav_dialog_update_db_message)
-                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            createYesNoDialog(
+                    R.string.nav_dialog_update_db_title,
+                    R.string.nav_dialog_update_db_message,
+                    new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             new DataBaseCreateAsyncTask().execute(true);
                         }
-                    })
-                    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-
-                        }
                     });
-            builder.create().show();
 
         } else if (id == R.id.nav_modify_remaincount) {
+            createChoiceDialog(
+                    R.string.nav_dialog_modify_remaincount_title,
+                    R.array.nav_dialog_remaincount_list,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            RealmTransaction.modifySetting(mSettingRealm, requestRemainCount);
+                        }
+                    });
 
         } else if (id == R.id.nav_delete_favorite) {
-        //    RealmTransaction.clearFavorite(mRealm);
-        } else if (id == R.id.nav_delete_recent_search) {
-        //    RealmTransaction.clearSearchHistory(mRealm);
-        } else if (id == R.id.nav_delete_beaconarrinfo) {
-        //    RealmTransaction.clearBeaconArrInfo(mRealm);
-        } else if (id == R.id.nav_open_source_license) {
+            createYesNoDialog(
+                R.string.nav_dialog_delete_favorite_title,
+                R.string.nav_dialog_delete_favorite_message,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        RealmTransaction.clearFavorite(mRealm);
+                    }
+                });
 
-        }
+        } else if (id == R.id.nav_delete_recent_search) {
+            createYesNoDialog(
+                    R.string.nav_dialog_delete_recent_search_title,
+                    R.string.nav_dialog_delete_recent_search_message,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            RealmTransaction.clearSearchHistory(mRealm);
+                        }
+                    });
+
+        } else if (id == R.id.nav_delete_beaconarrinfo) {
+            createYesNoDialog(
+                    R.string.nav_dialog_nav_delete_beaconarrinfo_title,
+                    R.string.nav_dialog_nav_delete_beaconarrinfo_message,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            RealmTransaction.clearBeaconArrInfo(mRealm);
+                        }
+                    });
+
+        }/* else if (id == R.id.nav_open_source_license) {
+
+        }*/
 
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void createYesNoDialog(int titleId, int messageId, DialogInterface.OnClickListener onYesClickListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle( titleId )
+                .setMessage( messageId )
+                .setPositiveButton(R.string.ok, onYesClickListener)
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+        builder.create().show();
+    }
+
+    private void createChoiceDialog(int titleId, int itemsId, DialogInterface.OnClickListener onYesClickListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle( titleId )
+                .setSingleChoiceItems(R.array.nav_dialog_remaincount_list, mSetting.getRequestRemainCount(), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        requestRemainCount = which;
+                    }
+                })
+                .setPositiveButton(R.string.ok, onYesClickListener)
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+        builder.create().show();
     }
 
     @Override
@@ -318,7 +387,8 @@ public class MainActivity extends AppCompatActivity
         }
 
         mPrevPosition = position;                //이전 포지션 값을 현재로 변경
-        mSectionsPagerAdapter.notifyDataSetChanged();    }
+        mSectionsPagerAdapter.notifyDataSetChanged();
+    }
 
     @Override
     public void onPageScrollStateChanged(int state) {

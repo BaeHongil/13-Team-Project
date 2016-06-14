@@ -15,7 +15,14 @@ import java.util.Date;
 
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
+import io.realm.annotations.RealmModule;
 import kr.ac.knu.odego.activity.BeaconActivity;
+import kr.ac.knu.odego.item.BeaconArrInfo;
+import kr.ac.knu.odego.item.BusStop;
+import kr.ac.knu.odego.item.Favorite;
+import kr.ac.knu.odego.item.Route;
+import kr.ac.knu.odego.item.Setting;
+import lombok.Getter;
 import okhttp3.OkHttpClient;
 
 /**
@@ -23,8 +30,8 @@ import okhttp3.OkHttpClient;
  */
 
 public class OdegoApplication extends Application {
-    private static Context context;
-    private RealmConfiguration busInfoRealmConfig;
+    @Getter private static Context context;
+    @Getter private static RealmConfiguration busInfoRealmConfig, settingRealmConfig;
 
     @Override
     public void onCreate() {
@@ -33,10 +40,16 @@ public class OdegoApplication extends Application {
 
         busInfoRealmConfig = new RealmConfiguration.Builder(this)
                 .name("bus_info.realm")
+                .modules(new busInfoModule())
                 .deleteRealmIfMigrationNeeded() // 마이그레이션 필요시 전체삭제 메소드이므로 릴리즈시 삭제요망
                 .build();
         Realm.setDefaultConfiguration(busInfoRealmConfig);
 
+        settingRealmConfig = new RealmConfiguration.Builder(this)
+                .name("setting.realm")
+                .modules(new settingModule())
+                .deleteRealmIfMigrationNeeded()
+                .build();
     //    Realm.deleteRealm(busInfoRealmConfig);
 
         /* Chrome App Stetho 설정 */
@@ -56,11 +69,6 @@ public class OdegoApplication extends Application {
             }
         }.start();
     }
-
-    public static Context getContext() {
-        return context;
-    }
-
     /**
      * Get the method name.(TEST용 메소드)
      *
@@ -111,5 +119,15 @@ public class OdegoApplication extends Application {
         NotificationManager mNotificationManager =
                 (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(mContext.getResources().getInteger(R.integer.notification_id), mBuilder.build());
+    }
+
+    @RealmModule(classes = { BeaconArrInfo.class, BusStop.class, Favorite.class, Route.class })
+    private class busInfoModule {
+
+    }
+
+    @RealmModule(classes = { Setting.class })
+    private class settingModule {
+
     }
 }

@@ -55,12 +55,12 @@ public class RouteListAdapter extends RealmRecyclerViewAdapter<Route, RouteListA
         String routeType = mRoute.getType();
         if (RouteType.MAIN.getName().equals( routeType ))
             holder.mItemIcon.setImageResource(R.drawable.bus_main);
-        else if (RouteType.BRANCH.getName().equals( routeType ))
-            holder.mItemIcon.setImageResource(R.drawable.bus_branch);
         else if (RouteType.EXPRESS.getName().equals( routeType ))
             holder.mItemIcon.setImageResource(R.drawable.bus_express);
         else if (RouteType.CIRCULAR.getName().equals( routeType ))
             holder.mItemIcon.setImageResource(R.drawable.bus_circular);
+        else
+            holder.mItemIcon.setImageResource(R.drawable.bus_branch);
 
         holder.mItemName.setText(mRoute.getNo());
         holder.mItemDetail.setText(mRoute.getDirection());

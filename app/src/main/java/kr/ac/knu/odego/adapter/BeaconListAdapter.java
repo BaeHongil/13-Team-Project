@@ -52,12 +52,12 @@ public class BeaconListAdapter extends RealmBaseAdapter<BusStop> {
         String type;
         if( routeType.equals( RouteType.MAIN.getName() ) )
             type = MAIN;
-        else if( routeType.equals( RouteType.BRANCH.getName() ) )
-            type = BRANCH;
+        else if( routeType.equals( RouteType.EXPRESS.getName() ) )
+            type = EXPRESS;
         else if( routeType.equals( RouteType.CIRCULAR.getName() ) )
             type = CIRCULAR;
         else
-            type = EXPRESS;
+            type = BRANCH;
 
         Resources res = context.getResources();
         String packageName = context.getPackageName();

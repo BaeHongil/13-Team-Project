@@ -32,6 +32,7 @@ import kr.ac.knu.odego.common.RealmTransaction;
 import kr.ac.knu.odego.common.RouteType;
 import kr.ac.knu.odego.item.BeaconArrInfo;
 import kr.ac.knu.odego.item.NotiReqMsg;
+import kr.ac.knu.odego.item.Setting;
 
 /**
  * Created by Brick on 2016-06-09.
@@ -68,8 +69,12 @@ public class BeaconActivity extends AppCompatActivity{
         if( getIntent().getExtras() == null ) {
             beaconArrInfoIndex = mRealm.where(BeaconArrInfo.class).max("index").intValue();
             mBeaconArrInfo = mRealm.where(BeaconArrInfo.class).equalTo("index", beaconArrInfoIndex).findFirst();
+
+            Realm mSettingRealm = Realm.getInstance( OdegoApplication.getSettingRealmConfig() );
+            Setting mSetting = mSettingRealm.where(Setting.class).findFirst();
             mNotiReqMsg = new NotiReqMsg(mBeaconArrInfo.getMRoute().getId(), mBeaconArrInfo.isForward(),
-                    mBeaconArrInfo.getBusId(), mBeaconArrInfo.getDestIndex(), 2, fcmToken);
+                    mBeaconArrInfo.getBusId(), mBeaconArrInfo.getDestIndex(), mSetting.getRequestRemainCount(), fcmToken);
+            mSettingRealm.close();
         } else {
             isEditable = false; // 버스도착알림 기록 확인시에는 수정불가
             beaconArrInfoIndex = getIntent().getExtras().getInt("beaconArrInfoIndex", -1);
@@ -113,12 +118,12 @@ public class BeaconActivity extends AppCompatActivity{
         String routeType = mBeaconArrInfo.getMRoute().getType();
         if (RouteType.MAIN.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.main_bus);
-        else if (RouteType.BRANCH.getName().equals( routeType ))
-            themeColor = ContextCompat.getColor(this, R.color.branch_bus);
         else if (RouteType.EXPRESS.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.express_bus);
         else if (RouteType.CIRCULAR.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.circular_bus);
+        else
+            themeColor = ContextCompat.getColor(this, R.color.branch_bus);
 
         if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
             getWindow().setStatusBarColor(themeColor);

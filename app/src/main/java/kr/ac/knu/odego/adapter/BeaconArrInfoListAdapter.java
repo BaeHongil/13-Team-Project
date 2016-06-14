@@ -40,12 +40,12 @@ public class BeaconArrInfoListAdapter extends RealmRecyclerViewAdapter<BeaconArr
         String routeType = mBeaconArrInfo.getMRoute().getType();
         if( routeType.equals( RouteType.MAIN.getName() ) )
             holder.itemIcon.setImageResource(R.drawable.bus_main);
-        else if( routeType.equals( RouteType.BRANCH.getName() ) )
-            holder.itemIcon.setImageResource(R.drawable.bus_branch);
+        else if( routeType.equals( RouteType.EXPRESS.getName() ) )
+            holder.itemIcon.setImageResource(R.drawable.bus_express);
         else if( routeType.equals( RouteType.CIRCULAR.getName() ) )
             holder.itemIcon.setImageResource(R.drawable.bus_circular);
         else
-            holder.itemIcon.setImageResource(R.drawable.bus_express);
+            holder.itemIcon.setImageResource(R.drawable.bus_branch);
 
         holder.routeNo.setText( mBeaconArrInfo.getMRoute().getNo() );
 

@@ -1,41 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group android:checkableBehavior="single">
+    <group>
         <item
             android:id="@+id/nav_clear_db"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="데이터베이스 초기화" />
+            android:icon="@drawable/ic_sync_black_24dp"
+            android:title="@string/nav_dialog_update_db_title" />
         <item
             android:id="@+id/nav_modify_remaincount"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="도착지알림 정거장 수 설정" />
+            android:icon="@drawable/ic_notifications_black_24dp"
+            android:title="@string/nav_dialog_modify_remaincount_title" />
     </group>
 
     <item android:title="개인데이터 삭제">
         <menu>
             <item
                 android:id="@+id/nav_delete_favorite"
-                android:icon="@drawable/ic_menu_slideshow"
-                android:title="즐겨찾기 삭제" />
+                android:icon="@drawable/nav_delete_favorite"
+                android:title="@string/nav_dialog_delete_favorite_title" />
             <item
                 android:id="@+id/nav_delete_recent_search"
-                android:icon="@drawable/ic_menu_manage"
-                android:title="검색기록 삭제" />
+                android:icon="@drawable/nav_delete_recent_search"
+                android:title="@string/nav_dialog_delete_recent_search_title" />
             <item
                 android:id="@+id/nav_delete_beaconarrinfo"
-                android:icon="@drawable/ic_menu_share"
-                android:title="버스탑승기록 삭제" />
+                android:icon="@drawable/nav_delete_beaconarrinfo"
+                android:title="@string/nav_dialog_nav_delete_beaconarrinfo_title" />
         </menu>
     </item>
 
-    <item android:title="정보">
+    <!--<item android:title="정보">
         <menu>
             <item
                 android:id="@+id/nav_open_source_license"
                 android:icon="@drawable/ic_menu_send"
-                android:title="오픈소스 라이선스" />
+                android:title="@string/nav_nav_opensource_license" />
         </menu>
-    </item>
+    </item>-->
 
 </menu>

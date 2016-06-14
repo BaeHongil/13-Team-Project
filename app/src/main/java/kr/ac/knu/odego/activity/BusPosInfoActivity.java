@@ -92,12 +92,12 @@ public class BusPosInfoActivity extends ObsvBaseActivity {
         String routeType = mRoute.getType();
         if (RouteType.MAIN.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.main_bus);
-        else if (RouteType.BRANCH.getName().equals( routeType ))
-            themeColor = ContextCompat.getColor(this, R.color.branch_bus);
         else if (RouteType.EXPRESS.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.express_bus);
         else if (RouteType.CIRCULAR.getName().equals( routeType ))
             themeColor = ContextCompat.getColor(this, R.color.circular_bus);
+        else
+            themeColor = ContextCompat.getColor(this, R.color.branch_bus);
 
         if (Build.VERSION.SDK_INT >= 21)  // 상태바 색상 변경
             getWindow().setStatusBarColor(themeColor);
